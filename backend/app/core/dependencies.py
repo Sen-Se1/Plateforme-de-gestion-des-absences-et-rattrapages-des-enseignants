@@ -1,37 +1,30 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from app.core.database import get_db
 from app.core.config import settings
+from app.core.database import get_db
+from app.models.utilisateur import Utilisateur
 
-# A placeholder model setup until the true models are created.
-# from app.models import Utilisateur
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-class TokenData:
-    username: str = None
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="Impossible de valider les informations d'identification",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
+        user_id: str = payload.get("sub")
+        if user_id is None:
             raise credentials_exception
-        token_data = TokenData()
-        token_data.username = username
     except JWTError:
         raise credentials_exception
-    
-    # Placeholder for checking the active user against DB:
-    # user = db.query(Utilisateur).filter(Utilisateur.email == token_data.username).first()
-    # if user is None or not user.actif:
-    #     raise credentials_exception
-    # return user
-    return token_data
+        
+    user = db.query(Utilisateur).filter(Utilisateur.id == int(user_id)).first()
+    if user is None:
+        raise credentials_exception
+    if not user.actif:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur inactif")
+    return user
