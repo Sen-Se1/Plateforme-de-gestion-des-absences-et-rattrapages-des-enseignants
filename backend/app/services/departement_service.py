@@ -7,11 +7,15 @@ from app.schemas.departement import DepartementCreate, DepartementUpdate
 
 class DepartementService:
     @staticmethod
-    def get_all(db: Session, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[Departement]:
+    def get_paginated(db: Session, page: int, per_page: int, search: Optional[str] = None):
         query = db.query(Departement)
         if search:
             query = query.filter(Departement.nom.ilike(f"%{search}%"))
-        return query.offset(skip).limit(limit).all()
+        
+        total = query.count()
+        offset = (page - 1) * per_page
+        items = query.offset(offset).limit(per_page).all()
+        return items, total
 
     @staticmethod
     def get_by_id(db: Session, departement_id: int) -> Optional[Departement]:

@@ -6,14 +6,15 @@ from app.core.dependencies import get_current_active_user
 from app.models.utilisateur import Utilisateur
 from app.models.enums import RoleUtilisateur
 from app.schemas.departement import DepartementCreate, DepartementUpdate, DepartementResponse
+from app.schemas.common import PaginatedResponse
 from app.services.departement_service import DepartementService
 
 router = APIRouter()
 
-@router.get("/", response_model=List[DepartementResponse])
+@router.get("/", response_model=PaginatedResponse[DepartementResponse])
 def get_departements(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
     search: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: Utilisateur = Depends(get_current_active_user)
@@ -23,7 +24,15 @@ def get_departements(
             status_code=status.HTTP_403_FORBIDDEN, 
             detail="Pas assez d'autorisations pour lister les départements"
         )
-    return DepartementService.get_all(db, skip=skip, limit=limit, search=search)
+    items, total = DepartementService.get_paginated(db, page=page, per_page=per_page, search=search)
+    total_pages = (total + per_page - 1) // per_page
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": total_pages
+    }
 
 @router.post("/", response_model=DepartementResponse, status_code=status.HTTP_201_CREATED)
 def create_departement(

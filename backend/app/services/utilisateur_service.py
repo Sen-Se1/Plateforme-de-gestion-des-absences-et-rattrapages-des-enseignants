@@ -6,13 +6,17 @@ from app.core.security import get_password_hash
 
 class UtilisateurService:
     @staticmethod
-    def get_all(db: Session, role: Optional[str] = None, actif: Optional[bool] = None) -> List[Utilisateur]:
+    def get_paginated(db: Session, page: int, per_page: int, role: Optional[str] = None, actif: Optional[bool] = None):
         query = db.query(Utilisateur)
         if role:
             query = query.filter(Utilisateur.role == role)
         if actif is not None:
             query = query.filter(Utilisateur.actif == actif)
-        return query.all()
+        
+        total = query.count()
+        offset = (page - 1) * per_page
+        items = query.offset(offset).limit(per_page).all()
+        return items, total
 
     @staticmethod
     def get_by_id(db: Session, user_id: int) -> Optional[Utilisateur]:
