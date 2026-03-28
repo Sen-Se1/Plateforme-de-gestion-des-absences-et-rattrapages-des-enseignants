@@ -21,11 +21,12 @@ def get_users(
     per_page: int = Query(20, ge=1, le=100),
     role: Optional[RoleUtilisateur] = Query(None),
     actif: Optional[bool] = None,
+    search: Optional[str] = Query(None),
     db: Session = Depends(get_db),
     current_user: Utilisateur = Depends(get_current_active_user)
 ):
     check_admin_permission(current_user)
-    items, total = UtilisateurService.get_paginated(db, page=page, per_page=per_page, role=role, actif=actif)
+    items, total = UtilisateurService.get_paginated(db, page=page, per_page=per_page, role=role, actif=actif, search=search)
     total_pages = (total + per_page - 1) // per_page
     return {
         "items": items,

@@ -1,3 +1,4 @@
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.models.utilisateur import Utilisateur
@@ -6,12 +7,21 @@ from app.core.security import get_password_hash
 
 class UtilisateurService:
     @staticmethod
-    def get_paginated(db: Session, page: int, per_page: int, role: Optional[str] = None, actif: Optional[bool] = None):
+    def get_paginated(db: Session, page: int, per_page: int, role: Optional[str] = None, actif: Optional[bool] = None, search: Optional[str] = None):
         query = db.query(Utilisateur)
         if role:
             query = query.filter(Utilisateur.role == role)
         if actif is not None:
             query = query.filter(Utilisateur.actif == actif)
+        
+        if search:
+            query = query.filter(
+                or_(
+                    Utilisateur.nom.ilike(f"%{search}%"),
+                    Utilisateur.prenom.ilike(f"%{search}%"),
+                    Utilisateur.email.ilike(f"%{search}%")
+                )
+            )
         
         total = query.count()
         offset = (page - 1) * per_page
