@@ -72,13 +72,16 @@ def update_groupe(
     if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
         raise HTTPException(status_code=403, detail="Seuls l'admin système et l'administration peuvent modifier des groupes")
     
-    if data.departement_id and not GroupeService.check_department_exists(db, data.departement_id):
-        raise HTTPException(status_code=400, detail="Département inexistant")
-        
-    groupe = GroupeService.update(db, groupe_id, data)
+    groupe = GroupeService.get_by_id(db, groupe_id)
     if not groupe:
         raise HTTPException(status_code=404, detail="Groupe non trouvé")
-    return groupe
+        
+    if data.departement_id is not None:
+        if not GroupeService.check_department_exists(db, data.departement_id):
+            raise HTTPException(status_code=400, detail="Département inexistant")
+        
+    updated_groupe = GroupeService.update(db, groupe_id, data)
+    return updated_groupe
 
 @router.delete("/{groupe_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_groupe(
@@ -131,11 +134,15 @@ def add_students_to_group(
     if current_user.role != RoleUtilisateur.ADMINISTRATION:
         raise HTTPException(status_code=403, detail="Action réservée à l'administration")
         
+    groupe = GroupeService.get_by_id(db, groupe_id)
+    if not groupe:
+        raise HTTPException(status_code=404, detail="Groupe non trouvé")
+        
     added, errors = GroupeService.add_students(db, groupe_id, etudiants_ids)
     if added == 0 and errors:
         raise HTTPException(status_code=400, detail=", ".join(errors))
         
-    return {"message": f"{added} étudiants ajoutés", "errors": errors}
+    return {"message": f"{added} étudiants traités avec succès", "errors": errors}
 
 @router.delete("/{groupe_id}/etudiants/{etudiant_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_student_from_group(
@@ -147,8 +154,15 @@ def remove_student_from_group(
     if current_user.role != RoleUtilisateur.ADMINISTRATION:
         raise HTTPException(status_code=403, detail="Action réservée à l'administration")
         
+    groupe = GroupeService.get_by_id(db, groupe_id)
+    if not groupe:
+        raise HTTPException(status_code=404, detail="Groupe non trouvé")
+        
+    if not GroupeService.is_student_in_group(db, groupe_id, etudiant_id):
+        raise HTTPException(status_code=404, detail="L'étudiant n'appartient pas à ce groupe")
+        
     if not GroupeService.remove_student(db, groupe_id, etudiant_id):
-        raise HTTPException(status_code=404, detail="Étudiant non trouvé dans ce groupe")
+        raise HTTPException(status_code=500, detail="Erreur lors de la suppression")
     return None
 
 @router.get("/{groupe_id}/etudiants", response_model=PaginatedResponse[UtilisateurResponse])

@@ -76,26 +76,32 @@ class GroupeService:
         added_count = 0
         errors = []
         
-        # Get only correct role students
         students = db.query(Utilisateur).filter(
             Utilisateur.id.in_(student_ids),
             Utilisateur.role == RoleUtilisateur.ETUDIANT
         ).all()
         
         valid_students_map = {s.id: s for s in students}
-        current_student_ids = {s.id for s in groupe.etudiants}
         
         for s_id in student_ids:
             if s_id not in valid_students_map:
                 errors.append(f"ID {s_id} n'est pas un étudiant valide.")
                 continue
             
-            if s_id not in current_student_ids:
-                groupe.etudiants.append(valid_students_map[s_id])
-                added_count += 1
+            db.execute(etudiants_groupes.delete().where(etudiants_groupes.c.etudiant_id == s_id))
+            
+            groupe.etudiants.append(valid_students_map[s_id])
+            added_count += 1
         
         db.commit()
         return added_count, errors
+
+    @staticmethod
+    def is_student_in_group(db: Session, groupe_id: int, student_id: int) -> bool:
+        return db.query(etudiants_groupes).filter(
+            etudiants_groupes.c.groupe_id == groupe_id,
+            etudiants_groupes.c.etudiant_id == student_id
+        ).count() > 0
 
     @staticmethod
     def remove_student(db: Session, groupe_id: int, student_id: int) -> bool:
