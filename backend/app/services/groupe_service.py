@@ -68,13 +68,19 @@ class GroupeService:
         return db.query(Departement).filter(Departement.id == departement_id).count() > 0
 
     @staticmethod
-    def add_students(db: Session, groupe_id: int, student_ids: List[int]) -> Tuple[int, List[str]]:
+    def get_student_current_group(db: Session, student_id: int) -> Optional[int]:
+        res = db.query(etudiants_groupes.c.groupe_id).filter(etudiants_groupes.c.etudiant_id == student_id).first()
+        return res[0] if res else None
+
+    @staticmethod
+    def add_students(db: Session, groupe_id: int, student_ids: List[int]) -> Tuple[int, List[str], List[int]]:
         groupe = db.query(Groupe).filter(Groupe.id == groupe_id).first()
         if not groupe:
-            return 0, ["Groupe non trouvé"]
+            return 0, ["Groupe non trouvé"], []
         
         added_count = 0
         errors = []
+        already_in_other_group = []
         
         students = db.query(Utilisateur).filter(
             Utilisateur.id.in_(student_ids),
@@ -88,13 +94,20 @@ class GroupeService:
                 errors.append(f"ID {s_id} n'est pas un étudiant valide.")
                 continue
             
-            db.execute(etudiants_groupes.delete().where(etudiants_groupes.c.etudiant_id == s_id))
+            current_g_id = GroupeService.get_student_current_group(db, s_id)
+            if current_g_id is not None:
+                if current_g_id != groupe_id:
+                    already_in_other_group.append(s_id)
+                continue
             
             groupe.etudiants.append(valid_students_map[s_id])
             added_count += 1
         
+        if already_in_other_group:
+            return 0, errors, already_in_other_group
+            
         db.commit()
-        return added_count, errors
+        return added_count, errors, []
 
     @staticmethod
     def is_student_in_group(db: Session, groupe_id: int, student_id: int) -> bool:

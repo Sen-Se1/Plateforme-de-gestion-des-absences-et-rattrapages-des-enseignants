@@ -138,9 +138,19 @@ def add_students_to_group(
     if not groupe:
         raise HTTPException(status_code=404, detail="Groupe non trouvé")
         
-    added, errors = GroupeService.add_students(db, groupe_id, etudiants_ids)
+    added, errors, already_in_group = GroupeService.add_students(db, groupe_id, etudiants_ids)
+    
+    if already_in_group:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "message": "Certains étudiants appartiennent déjà à un autre groupe et doivent en être retirés manuellement.",
+                "students": already_in_group
+            }
+        )
+        
     if added == 0 and errors:
-        raise HTTPException(status_code=400, detail=", ".join(errors))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=", ".join(errors))
         
     return {"message": f"{added} étudiants traités avec succès", "errors": errors}
 
