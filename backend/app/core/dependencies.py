@@ -30,6 +30,9 @@ def get_current_user(request: Request, db: Session = Depends(get_db), token_auth
     user = db.query(Utilisateur).filter(Utilisateur.id == int(user_id)).first()
     if user is None:
         raise credentials_exception
-    if not user.actif:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur inactif")
     return user
+
+async def get_current_active_user(current_user: Utilisateur = Depends(get_current_user)) -> Utilisateur:
+    if not current_user.actif:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Utilisateur inactif")
+    return current_user

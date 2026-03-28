@@ -1,1 +1,98 @@
-# Router 
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+from typing import List, Optional
+from app.core.database import get_db
+from app.core.dependencies import get_current_active_user
+from app.models.utilisateur import Utilisateur
+from app.schemas.utilisateur import UtilisateurCreate, UtilisateurUpdate, UtilisateurResponse
+from app.services.utilisateur_service import UtilisateurService
+from app.models.enums import RoleUtilisateur
+
+router = APIRouter()
+
+def check_admin_permission(current_user: Utilisateur):
+    if current_user.role != RoleUtilisateur.ADMIN_SYSTEME:
+        raise HTTPException(status_code=403, detail="Pas assez d'autorisations")
+
+@router.get("/", response_model=List[UtilisateurResponse])
+def get_users(
+    role: Optional[RoleUtilisateur] = Query(None),
+    actif: Optional[bool] = None,
+    db: Session = Depends(get_db),
+    current_user: Utilisateur = Depends(get_current_active_user)
+):
+    check_admin_permission(current_user)
+    return UtilisateurService.get_all(db, role=role, actif=actif)
+
+@router.get("/{user_id}", response_model=UtilisateurResponse)
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: Utilisateur = Depends(get_current_active_user)
+):
+    check_admin_permission(current_user)
+    user = UtilisateurService.get_by_id(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    return user
+
+@router.post("/", response_model=UtilisateurResponse, status_code=status.HTTP_201_CREATED)
+def create_user(
+    user_data: UtilisateurCreate,
+    db: Session = Depends(get_db),
+    current_user: Utilisateur = Depends(get_current_active_user)
+):
+    check_admin_permission(current_user)
+    existing = UtilisateurService.get_by_email(db, user_data.email)
+    if existing:
+        raise HTTPException(status_code=400, detail="Email déjà enregistré")
+    return UtilisateurService.create(db, user_data)
+
+@router.put("/{user_id}", response_model=UtilisateurResponse)
+def update_user(
+    user_id: int,
+    user_data: UtilisateurUpdate,
+    db: Session = Depends(get_db),
+    current_user: Utilisateur = Depends(get_current_active_user)
+):
+    check_admin_permission(current_user)
+    user = UtilisateurService.update(db, user_id, user_data)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    return user
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: Utilisateur = Depends(get_current_active_user)
+):
+    check_admin_permission(current_user)
+    success = UtilisateurService.delete(db, user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    return None
+
+@router.put("/{user_id}/activer", response_model=UtilisateurResponse)
+def activate_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: Utilisateur = Depends(get_current_active_user)
+):
+    check_admin_permission(current_user)
+    user = UtilisateurService.activate(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    return user
+
+@router.put("/{user_id}/desactiver", response_model=UtilisateurResponse)
+def deactivate_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: Utilisateur = Depends(get_current_active_user)
+):
+    check_admin_permission(current_user)
+    user = UtilisateurService.deactivate(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+    return user
