@@ -56,6 +56,8 @@ def update_user(
     current_user: Utilisateur = Depends(get_current_active_user)
 ):
     check_admin_permission(current_user)
+    if current_user.id == user_id:
+        raise HTTPException(status_code=403, detail="Vous ne pouvez pas modifier votre propre compte")
     user = UtilisateurService.update(db, user_id, user_data)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
@@ -68,6 +70,8 @@ def delete_user(
     current_user: Utilisateur = Depends(get_current_active_user)
 ):
     check_admin_permission(current_user)
+    if current_user.id == user_id:
+        raise HTTPException(status_code=403, detail="Vous ne pouvez pas modifier votre propre compte")
     success = UtilisateurService.delete(db, user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
@@ -80,6 +84,8 @@ def activate_user(
     current_user: Utilisateur = Depends(get_current_active_user)
 ):
     check_admin_permission(current_user)
+    if current_user.id == user_id:
+        raise HTTPException(status_code=403, detail="Vous ne pouvez pas modifier votre propre compte")
     user = UtilisateurService.activate(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
@@ -92,6 +98,8 @@ def deactivate_user(
     current_user: Utilisateur = Depends(get_current_active_user)
 ):
     check_admin_permission(current_user)
+    if current_user.id == user_id:
+        raise HTTPException(status_code=403, detail="Vous ne pouvez pas modifier votre propre compte")
     user = UtilisateurService.deactivate(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
