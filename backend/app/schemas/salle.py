@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class SalleBase(BaseModel):
     nom: str = Field(..., max_length=50)
-    capacite: int = Field(gt=0)
+    capacite: int = Field(..., gt=0)
 
 class SalleCreate(SalleBase):
     pass
