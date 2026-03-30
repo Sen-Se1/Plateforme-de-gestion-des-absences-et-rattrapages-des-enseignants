@@ -1,38 +1,38 @@
 from typing import Optional
 from datetime import date, datetime
 from pydantic import BaseModel, Field, ConfigDict
-from app.schemas.enums import StatutAbsence
-from app.schemas.utilisateur import UtilisateurSimple
+from app.models.enums import StatutAbsence
 from app.schemas.matiere import MatiereSimple
+from app.schemas.utilisateur import UtilisateurSimple
 
 class AbsenceBase(BaseModel):
-    enseignant_id: int
     matiere_id: int
     date_absence: date
-    motif: str = Field(...)
-    justificatif: Optional[str] = Field(None, max_length=255)
+    motif: str = Field(..., description="Reason for absence")
 
 class AbsenceCreate(AbsenceBase):
-    statut: Optional[StatutAbsence] = StatutAbsence.EN_ATTENTE
+    pass
 
 class AbsenceUpdate(BaseModel):
-    enseignant_id: Optional[int] = None
     matiere_id: Optional[int] = None
     date_absence: Optional[date] = None
     motif: Optional[str] = None
-    justificatif: Optional[str] = Field(None, max_length=255)
-    statut: Optional[StatutAbsence] = None
 
 class AbsenceSimple(AbsenceBase):
     id: int
+    enseignant_id: int
+    justificatif: Optional[str] = None
     statut: StatutAbsence
     model_config = ConfigDict(from_attributes=True)
 
 class AbsenceResponse(AbsenceBase):
     id: int
-    statut: StatutAbsence
+    enseignant_id: int
     enseignant: Optional[UtilisateurSimple] = None
     matiere: Optional[MatiereSimple] = None
+    justificatif: Optional[str] = None
+    statut: StatutAbsence
     created_at: datetime
     updated_at: datetime
+    
     model_config = ConfigDict(from_attributes=True)

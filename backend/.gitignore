@@ -35,3 +35,6 @@ coverage.xml
 
 # seed_db.py
 seed_db.py
+
+# Uploads
+uploads/
