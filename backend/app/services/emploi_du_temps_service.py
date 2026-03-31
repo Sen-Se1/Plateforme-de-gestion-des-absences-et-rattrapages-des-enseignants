@@ -1,7 +1,7 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_, or_
 from datetime import time
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 from app.models.emploi_du_temps import EmploiDuTemps
 from app.models.matiere import Matiere
 from app.models.etudiant_groupe import etudiants_groupes
@@ -205,3 +205,51 @@ class EmploiDuTempsService:
         db.delete(db_item)
         db.commit()
         return True
+
+    @staticmethod
+    def get_planning_conflicts(db: Session) -> List[Dict]:
+        conflicts = []
+        # Query overlaps in EmploiDuTemps
+        # Overlap: same jour_semaine, same room AND overlapping time OR same teacher AND overlapping time
+        
+        # We need enseignant_id from Matiere
+        candidates = db.query(EmploiDuTemps).options(
+            joinedload(EmploiDuTemps.matiere), 
+            joinedload(EmploiDuTemps.salle)
+        ).all()
+        
+        for i in range(len(candidates)):
+            for j in range(i + 1, len(candidates)):
+                e1 = candidates[i]
+                e2 = candidates[j]
+                
+                if e1.jour_semaine == e2.jour_semaine:
+                    # Overlap logic: existing_debut < new_fin AND new_debut < existing_fin
+                    if e1.heure_debut < e2.heure_fin and e2.heure_debut < e1.heure_fin:
+                        # Conflict room
+                        if e1.salle_id == e2.salle_id:
+                            conflicts.append({
+                                "type": "room",
+                                "id1": e1.id,
+                                "id2": e2.id,
+                                "name1": e1.matiere.nom if e1.matiere else "?",
+                                "name2": e2.matiere.nom if e2.matiere else "?",
+                                "salle": e1.salle.nom if e1.salle else str(e1.salle_id),
+                                "day": e1.jour_semaine,
+                                "slot": f"{e1.heure_debut.strftime('%H:%M')} - {e1.heure_fin.strftime('%H:%M')} / {e2.heure_debut.strftime('%H:%M')} - {e2.heure_fin.strftime('%H:%M')}"
+                            })
+                        
+                        # Conflict teacher
+                        if e1.matiere and e2.matiere and e1.matiere.enseignant_id == e2.matiere.enseignant_id:
+                            conflicts.append({
+                                "type": "teacher",
+                                "id1": e1.id,
+                                "id2": e2.id,
+                                "name1": e1.matiere.nom,
+                                "name2": e2.matiere.nom,
+                                "enseignant_id": e1.matiere.enseignant_id,
+                                "day": e1.jour_semaine,
+                                "slot": f"{e1.heure_debut.strftime('%H:%M')} - {e1.heure_fin.strftime('%H:%M')} / {e2.heure_debut.strftime('%H:%M')} - {e2.heure_fin.strftime('%H:%M')}"
+                            })
+                            
+        return conflicts

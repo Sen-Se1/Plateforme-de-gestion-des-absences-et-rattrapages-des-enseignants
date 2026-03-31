@@ -137,6 +137,16 @@ def get_by_matiere(
         "total_pages": total_pages
     }
 
+@router.get("/conflits-planning")
+def get_planning_conflicts(
+    db: Session = Depends(get_db),
+    current_user: Utilisateur = Depends(get_current_active_user)
+):
+    if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Pas assez d'autorisations")
+        
+    return EmploiDuTempsService.get_planning_conflicts(db)
+
 @router.post("/", response_model=EmploiDuTempsResponse, status_code=status.HTTP_201_CREATED)
 def create_emploi_du_temps(
     data: EmploiDuTempsCreate,

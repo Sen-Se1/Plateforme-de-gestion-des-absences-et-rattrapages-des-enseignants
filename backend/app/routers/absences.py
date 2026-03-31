@@ -77,16 +77,6 @@ def get_my_history(
         "total_pages": total_pages
     }
 
-@router.get("/conflits-planning")
-def get_planning_conflicts(
-    db: Session = Depends(get_db),
-    current_user: Utilisateur = Depends(get_current_active_user)
-):
-    if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Pas assez d'autorisations")
-        
-    return AbsenceService.get_planning_conflicts(db)
-
 @router.get("/{id}", response_model=AbsenceResponse)
 def get_absence(
     id: int,
