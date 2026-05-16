@@ -97,7 +97,7 @@ export default function ContactPage() {
                   <div className="space-y-3">
                     <Label htmlFor="sujet" className="text-sm font-bold text-slate-700">Objet de votre demande</Label>
                     <Select>
-                      <SelectTrigger id="sujet" className="h-11 rounded-xl border-slate-200 shadow-sm">
+                      <SelectTrigger id="sujet" className="rounded-xl border-slate-200 shadow-sm">
                         <SelectValue placeholder="Sélectionnez un sujet" />
                       </SelectTrigger>
                       <SelectContent>
