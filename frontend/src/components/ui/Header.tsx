@@ -41,7 +41,7 @@ const Header = () => {
                 {item.name}
               </Link>
             ))}
-            <Button variant="default" size="sm">
+            <Button variant="default">
               Se connecter
             </Button>
           </nav>

@@ -30,10 +30,15 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-white mb-6 uppercase text-xs tracking-widest">Navigation</h4>
             <ul className="space-y-4">
-              {["Accueil", "Fonctionnalités", "À propos", "Contact"].map((link) => (
-                <li key={link}>
-                  <Link href={`/${link === "Accueil" ? "" : link.toLowerCase().replace("à ", "")}`} className="text-slate-400 text-sm hover:text-primary-light transition-colors">
-                    {link}
+              {[
+                { name: "Accueil", href: "/" },
+                { name: "Fonctionnalités", href: "/features" },
+                { name: "À propos", href: "/about" },
+                { name: "Contact", href: "/contact" }
+              ].map((link) => (
+                <li key={link.name}>
+                  <Link href={link.href} className="text-slate-400 text-sm hover:text-primary-light transition-colors">
+                    {link.name}
                   </Link>
                 </li>
               ))}

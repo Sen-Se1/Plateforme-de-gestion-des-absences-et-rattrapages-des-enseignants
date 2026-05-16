@@ -80,15 +80,15 @@ export default function FeaturesPage() {
             <TabsContent key={role.id} value={role.id} className="animate-in fade-in zoom-in duration-300">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {role.features.map((f, i) => (
-                  <Card key={i} className="border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                    <CardHeader>
-                      <div className={`p-3 rounded-xl bg-slate-50 ${role.iconColor} w-fit mb-4`}>
-                        <f.icon size={28} />
+                  <Card key={i} className="border-slate-100 shadow-sm hover:shadow-md transition-shadow p-4">
+                    <CardHeader className="p-4">
+                      <div className={`p-4 rounded-xl bg-slate-50 ${role.iconColor} w-fit mb-2`}>
+                        <f.icon size={32} />
                       </div>
                       <CardTitle className="text-xl font-bold">{f.title}</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-muted-foreground text-sm leading-relaxed">
+                    <CardContent className="p-4">
+                      <CardDescription className="text-muted-foreground text-base leading-relaxed">
                         {f.desc}
                       </CardDescription>
                     </CardContent>

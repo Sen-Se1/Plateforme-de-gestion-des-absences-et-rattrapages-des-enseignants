@@ -81,45 +81,45 @@ export default function ContactPage() {
           {/* Contact Form */}
           <div className="lg:col-span-2">
             <Card className="shadow-lg border-slate-200">
-              <CardContent className="pt-6">
-                <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="nom">Nom</Label>
-                      <Input id="nom" placeholder="Votre nom" className="rounded-xl border-slate-200" />
+              <CardContent className="p-8">
+                <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                      <Label htmlFor="nom" className="text-sm font-bold text-slate-700">Nom complet</Label>
+                      <Input id="nom" placeholder="Jean Dupont" className="rounded-xl border-slate-200 shadow-sm" />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" placeholder="votre@email.com" className="rounded-xl border-slate-200" />
+                    <div className="space-y-3">
+                      <Label htmlFor="email" className="text-sm font-bold text-slate-700">Adresse Email</Label>
+                      <Input id="email" type="email" placeholder="jean@universite.fr" className="rounded-xl border-slate-200 shadow-sm" />
                     </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="sujet">Sujet</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="sujet" className="text-sm font-bold text-slate-700">Objet de votre demande</Label>
                     <Select>
-                      <SelectTrigger id="sujet" className="rounded-xl border-slate-200">
-                        <SelectValue placeholder="Choisir un sujet" />
+                      <SelectTrigger id="sujet" className="h-11 rounded-xl border-slate-200 shadow-sm">
+                        <SelectValue placeholder="Sélectionnez un sujet" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="info">Demande d'information</SelectItem>
-                        <SelectItem value="support">Support technique</SelectItem>
-                        <SelectItem value="partner">Partenariat</SelectItem>
-                        <SelectItem value="other">Autre</SelectItem>
+                        <SelectItem value="info">Demande d'information générale</SelectItem>
+                        <SelectItem value="support">Support technique plateforme</SelectItem>
+                        <SelectItem value="partner">Partenariat académique</SelectItem>
+                        <SelectItem value="other">Autre demande</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="message" className="text-sm font-bold text-slate-700">Votre Message</Label>
                     <Textarea 
                       id="message" 
-                      placeholder="Comment pouvons-nous vous aider ?" 
-                      className="min-h-[150px] rounded-xl border-slate-200 resize-none"
+                      placeholder="Comment pouvons-nous vous aider ? Soyez aussi précis que possible." 
+                      className="min-h-[180px] rounded-xl border-slate-200 shadow-sm resize-none"
                     />
                   </div>
 
-                  <Button className="w-full gap-2 rounded-xl" size="lg">
-                    Envoyer le message <Send size={18} />
+                  <Button className="w-full gap-3 h-12 rounded-xl text-lg font-bold shadow-md hover:shadow-lg transition-all" size="lg">
+                    Envoyer le message <Send size={20} />
                   </Button>
                 </form>
               </CardContent>

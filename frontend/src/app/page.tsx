@@ -126,11 +126,11 @@ export default function HomePage() {
             <p className="text-blue-100 text-lg mb-12 max-w-2xl mx-auto">
               Rejoignez les dizaines d'universités qui optimisent déjà leur gestion académique avec AbsenceFlow.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-white text-primary hover:bg-slate-100 border-none">
+            <div className="flex flex-col sm:flex-row gap-6 justify-center">
+              <Button size="lg" className="bg-white text-primary hover:bg-slate-100 border-none px-10 h-14 text-lg">
                 Demander une démo
               </Button>
-              <Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10 hover:text-white">
+              <Button size="lg" className="bg-white/10 text-white hover:bg-white/20 border-white/20 px-10 h-14 text-lg backdrop-blur-sm">
                 Nous contacter
               </Button>
             </div>

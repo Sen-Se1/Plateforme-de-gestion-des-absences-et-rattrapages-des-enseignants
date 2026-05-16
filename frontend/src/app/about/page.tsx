@@ -21,20 +21,20 @@ export default function AboutPage() {
 
         {/* Vision/Mission */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center mb-32">
-          <div className="space-y-6">
+          <div className="space-y-8">
             {[
               { icon: Target, title: "Notre Mission", desc: "Digitaliser et fluidifier les processus académiques pour permettre aux enseignants de se concentrer sur la pédagogie.", color: "bg-blue-50 text-blue-600" },
               { icon: Zap, title: "L'Innovation IA", desc: "Nous utilisons des algorithmes intelligents pour détecter instantanément les conflits d'emploi du temps et suggérer les meilleures alternatives.", color: "bg-amber-50 text-amber-600" },
               { icon: ShieldCheck, title: "Fiabilité & Transparence", desc: "Une traçabilité complète de chaque action garantit une équité et une clarté totale pour les enseignants et les étudiants.", color: "bg-green-50 text-green-600" }
             ].map((item, i) => (
               <Card key={i} className="border-none shadow-none bg-transparent">
-                <CardHeader className="flex flex-row items-center gap-6 p-0 space-y-0">
-                  <div className={`flex-shrink-0 p-3 rounded-2xl ${item.color}`}>
-                    <item.icon size={28} />
+                <CardHeader className="flex flex-row items-center gap-8 p-0 space-y-0">
+                  <div className={`flex-shrink-0 p-4 rounded-2xl ${item.color}`}>
+                    <item.icon size={32} />
                   </div>
-                  <div className="space-y-1">
-                    <CardTitle className="text-xl font-bold">{item.title}</CardTitle>
-                    <p className="text-muted-foreground leading-relaxed text-sm">
+                  <div className="space-y-2">
+                    <CardTitle className="text-2xl font-bold">{item.title}</CardTitle>
+                    <p className="text-muted-foreground leading-relaxed">
                       {item.desc}
                     </p>
                   </div>
