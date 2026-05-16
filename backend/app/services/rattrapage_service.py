@@ -6,9 +6,45 @@ from app.models.absence import Absence
 from app.models.emploi_du_temps import EmploiDuTemps
 from app.models.matiere import Matiere
 from app.models.salle import Salle
+from app.models.utilisateur import Utilisateur
+from app.models.etudiant_groupe import etudiants_groupes
+from app.models.groupe import Groupe
 from app.models.enums import StatutRattrapage, RoleUtilisateur, StatutAbsence
 from app.schemas.rattrapage import RattrapageCreate
 from fastapi import HTTPException, status
+from app.services.notification_service import NotificationService
+
+
+def _get_admin_users(db: Session) -> List[Utilisateur]:
+    return db.query(Utilisateur).filter(
+        Utilisateur.role.in_([RoleUtilisateur.ADMINISTRATION, RoleUtilisateur.ADMIN_SYSTEME])
+    ).all()
+
+
+def _notify_admins(db: Session, titre: str, message: str):
+    try:
+        for admin in _get_admin_users(db):
+            NotificationService.create(db, admin.id, titre, message)
+    except Exception:
+        pass
+
+
+def _get_affected_student_ids(db: Session, matiere_id: int, jour_semaine: int) -> List[int]:
+    """Return student IDs in groups that have this matiere on the given weekday."""
+    groupe_ids = db.query(EmploiDuTemps.groupe_id).filter(
+        EmploiDuTemps.matiere_id == matiere_id,
+        EmploiDuTemps.jour_semaine == jour_semaine
+    ).distinct().all()
+    groupe_ids = [g[0] for g in groupe_ids]
+
+    if not groupe_ids:
+        return []
+
+    student_ids = db.query(etudiants_groupes.c.etudiant_id).filter(
+        etudiants_groupes.c.groupe_id.in_(groupe_ids)
+    ).distinct().all()
+    return [s[0] for s in student_ids]
+
 
 class RattrapageService:
     @staticmethod
@@ -122,7 +158,9 @@ class RattrapageService:
         if not salle:
             raise HTTPException(status_code=404, detail="Salle non trouvée")
 
-        absence = db.query(Absence).filter(Absence.id == data.absence_id).first()
+        absence = db.query(Absence).options(
+            joinedload(Absence.enseignant), joinedload(Absence.matiere)
+        ).filter(Absence.id == data.absence_id).first()
         if not absence:
             raise HTTPException(status_code=404, detail="Absence non trouvée")
         
@@ -155,11 +193,30 @@ class RattrapageService:
         db.add(db_item)
         db.commit()
         db.refresh(db_item)
+
+        # Notify admins of the new proposal
+        enseignant = absence.enseignant
+        enseignant_nom = f"{enseignant.nom} {enseignant.prenom}" if enseignant else f"ID {absence.enseignant_id}"
+        matiere_nom = absence.matiere.nom if absence.matiere else "?"
+        _notify_admins(
+            db,
+            titre="Proposition de rattrapage",
+            message=(
+                f"Un rattrapage a été proposé pour l'absence du {absence.date_absence} "
+                f"(enseignant: {enseignant_nom}). Le {data.date_proposee} de {data.heure_debut} "
+                f"à {data.heure_fin} en salle {salle.nom}."
+            )
+        )
+
         return db_item
 
     @staticmethod
     def validate(db: Session, id: int, admin_id: int):
-        rattrapage = db.query(Rattrapage).filter(Rattrapage.id == id).first()
+        rattrapage = db.query(Rattrapage).options(
+            joinedload(Rattrapage.absence).joinedload(Absence.enseignant),
+            joinedload(Rattrapage.absence).joinedload(Absence.matiere),
+            joinedload(Rattrapage.salle)
+        ).filter(Rattrapage.id == id).first()
         if not rattrapage:
             raise HTTPException(status_code=404, detail="Rattrapage non trouvé")
         
@@ -170,11 +227,51 @@ class RattrapageService:
         rattrapage.valide_par = admin_id
         db.commit()
         db.refresh(rattrapage)
+
+        # Notify teacher
+        try:
+            NotificationService.create(
+                db,
+                rattrapage.absence.enseignant_id,
+                "Rattrapage validé",
+                f"Votre proposition de rattrapage du {rattrapage.date_proposee} a été validée."
+            )
+        except Exception:
+            pass
+
+        # Notify affected students
+        try:
+            absence = rattrapage.absence
+            matiere = absence.matiere if absence else None
+            salle = rattrapage.salle
+            if matiere:
+                jour_semaine = absence.date_absence.weekday()
+                student_ids = _get_affected_student_ids(db, matiere.id, jour_semaine)
+                salle_nom = salle.nom if salle else "?"
+                matiere_nom = matiere.nom
+                for student_id in student_ids:
+                    NotificationService.create(
+                        db,
+                        student_id,
+                        "Séance de rattrapage programmée",
+                        (
+                            f"Un rattrapage pour le cours {matiere_nom} aura lieu le "
+                            f"{rattrapage.date_proposee} de {rattrapage.heure_debut} "
+                            f"à {rattrapage.heure_fin} en salle {salle_nom}."
+                        )
+                    )
+        except Exception:
+            pass
+
         return rattrapage
 
     @staticmethod
     def annuler(db: Session, id: int, user_id: int, user_role: RoleUtilisateur):
-        rattrapage = db.query(Rattrapage).options(joinedload(Rattrapage.absence)).filter(Rattrapage.id == id).first()
+        rattrapage = db.query(Rattrapage).options(
+            joinedload(Rattrapage.absence).joinedload(Absence.enseignant),
+            joinedload(Rattrapage.absence).joinedload(Absence.matiere),
+            joinedload(Rattrapage.salle)
+        ).filter(Rattrapage.id == id).first()
         if not rattrapage:
             raise HTTPException(status_code=404, detail="Rattrapage non trouvé")
             
@@ -183,10 +280,43 @@ class RattrapageService:
         
         if not is_owner and not is_admin:
             raise HTTPException(status_code=403, detail="Pas assez d'autorisations")
+
+        was_validated = rattrapage.statut == StatutRattrapage.VALIDE
+        date_proposee = rattrapage.date_proposee
+        enseignant_id = rattrapage.absence.enseignant_id
+        absence = rattrapage.absence
+        matiere = absence.matiere if absence else None
             
         rattrapage.statut = StatutRattrapage.ANNULE
         db.commit()
         db.refresh(rattrapage)
+
+        # Notify teacher (if an admin cancelled)
+        try:
+            NotificationService.create(
+                db,
+                enseignant_id,
+                "Rattrapage annulé",
+                f"Le rattrapage prévu le {date_proposee} a été annulé."
+            )
+        except Exception:
+            pass
+
+        # If it was validated, also notify affected students
+        if was_validated and matiere:
+            try:
+                jour_semaine = absence.date_absence.weekday()
+                student_ids = _get_affected_student_ids(db, matiere.id, jour_semaine)
+                for student_id in student_ids:
+                    NotificationService.create(
+                        db,
+                        student_id,
+                        "Rattrapage annulé",
+                        f"Le rattrapage prévu le {date_proposee} a été annulé."
+                    )
+            except Exception:
+                pass
+
         return rattrapage
 
     @staticmethod
@@ -196,7 +326,10 @@ class RattrapageService:
         if not salle:
             raise HTTPException(status_code=404, detail="Salle non trouvée")
             
-        rattrapage = db.query(Rattrapage).options(joinedload(Rattrapage.absence)).filter(Rattrapage.id == id).first()
+        rattrapage = db.query(Rattrapage).options(
+            joinedload(Rattrapage.absence).joinedload(Absence.enseignant),
+            joinedload(Rattrapage.absence).joinedload(Absence.matiere)
+        ).filter(Rattrapage.id == id).first()
         if not rattrapage:
             raise HTTPException(status_code=404, detail="Rattrapage non trouvé")
             
@@ -207,10 +340,43 @@ class RattrapageService:
         )
         if conflict_msg:
             raise HTTPException(status_code=400, detail=conflict_msg)
+
+        was_validated = rattrapage.statut == StatutRattrapage.VALIDE
+        date_proposee = rattrapage.date_proposee
+        enseignant_id = rattrapage.absence.enseignant_id
+        absence = rattrapage.absence
+        matiere = absence.matiere if absence else None
             
         rattrapage.salle_id = salle_id
         db.commit()
         db.refresh(rattrapage)
+
+        # Notify teacher
+        try:
+            NotificationService.create(
+                db,
+                enseignant_id,
+                "Salle de rattrapage modifiée",
+                f"La salle du rattrapage du {date_proposee} a été changée pour {salle.nom}."
+            )
+        except Exception:
+            pass
+
+        # Notify affected students if already validated
+        if was_validated and matiere:
+            try:
+                jour_semaine = absence.date_absence.weekday()
+                student_ids = _get_affected_student_ids(db, matiere.id, jour_semaine)
+                for student_id in student_ids:
+                    NotificationService.create(
+                        db,
+                        student_id,
+                        "Salle de rattrapage modifiée",
+                        f"La salle du rattrapage du {date_proposee} a été changée pour {salle.nom}."
+                    )
+            except Exception:
+                pass
+
         return rattrapage
 
     @staticmethod

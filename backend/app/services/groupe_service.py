@@ -8,6 +8,7 @@ from app.models.emploi_du_temps import EmploiDuTemps
 from app.models.departement import Departement
 from app.models.enums import RoleUtilisateur
 from app.schemas.groupe import GroupeCreate, GroupeUpdate
+from app.services.notification_service import NotificationService
 
 class GroupeService:
     @staticmethod
@@ -81,6 +82,7 @@ class GroupeService:
         added_count = 0
         errors = []
         already_in_other_group = []
+        successfully_added_ids = []
         
         students = db.query(Utilisateur).filter(
             Utilisateur.id.in_(student_ids),
@@ -102,11 +104,25 @@ class GroupeService:
             
             groupe.etudiants.append(valid_students_map[s_id])
             added_count += 1
+            successfully_added_ids.append(s_id)
         
         if already_in_other_group:
             return 0, errors, already_in_other_group
             
         db.commit()
+
+        # Notify each successfully added student
+        try:
+            for s_id in successfully_added_ids:
+                NotificationService.create(
+                    db,
+                    s_id,
+                    "Affectation à un groupe",
+                    f'Vous avez été ajouté(e) au groupe "{groupe.nom}".'
+                )
+        except Exception:
+            pass
+
         return added_count, errors, []
 
     @staticmethod
@@ -125,9 +141,22 @@ class GroupeService:
         student = next((s for s in groupe.etudiants if s.id == student_id), None)
         if not student:
             return False
-            
+        
+        groupe_nom = groupe.nom
         groupe.etudiants.remove(student)
         db.commit()
+
+        # Notify the removed student
+        try:
+            NotificationService.create(
+                db,
+                student_id,
+                "Retrait d'un groupe",
+                f'Vous avez été retiré(e) du groupe "{groupe_nom}".'
+            )
+        except Exception:
+            pass
+
         return True
 
     @staticmethod

@@ -4,6 +4,7 @@ from typing import List, Optional
 from app.models.utilisateur import Utilisateur
 from app.schemas.utilisateur import UtilisateurCreate, UtilisateurUpdate
 from app.core.security import get_password_hash
+from app.services.notification_service import NotificationService
 
 class UtilisateurService:
     @staticmethod
@@ -50,6 +51,18 @@ class UtilisateurService:
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
+
+        # Welcome notification for the new user
+        try:
+            NotificationService.create(
+                db,
+                db_user.id,
+                "Bienvenue sur la plateforme",
+                "Votre compte a été créé. Vous pouvez vous connecter avec votre email."
+            )
+        except Exception:
+            pass
+
         return db_user
 
     @staticmethod
@@ -74,6 +87,18 @@ class UtilisateurService:
         user = db.query(Utilisateur).filter(Utilisateur.id == user_id).first()
         if not user:
             return False
+
+        # Notify before deletion (while the user record still exists)
+        try:
+            NotificationService.create(
+                db,
+                user.id,
+                "Compte supprimé",
+                "Votre compte a été supprimé par l'administration."
+            )
+        except Exception:
+            pass
+
         db.delete(user)
         db.commit()
         return True
@@ -86,6 +111,18 @@ class UtilisateurService:
         user.actif = True
         db.commit()
         db.refresh(user)
+
+        # Notify the user their account is active
+        try:
+            NotificationService.create(
+                db,
+                user.id,
+                "Compte réactivé",
+                "Votre compte a été réactivé. Vous pouvez maintenant vous connecter."
+            )
+        except Exception:
+            pass
+
         return user
 
     @staticmethod
@@ -96,4 +133,16 @@ class UtilisateurService:
         user.actif = False
         db.commit()
         db.refresh(user)
+
+        # Notify the user their account was deactivated
+        try:
+            NotificationService.create(
+                db,
+                user.id,
+                "Compte désactivé",
+                "Votre compte a été désactivé par l'administration."
+            )
+        except Exception:
+            pass
+
         return user
