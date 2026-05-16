@@ -11,8 +11,8 @@ import {
   FileText 
 } from "lucide-react";
 import Container from "@/components/ui/Container";
-import Button from "@/components/ui/Button";
-import Card from "@/components/ui/Card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default function HomePage() {
   return (
@@ -41,7 +41,7 @@ export default function HomePage() {
                   Commencer maintenant <ArrowRight size={20} />
                 </Button>
                 <Link href="/features">
-                  <Button variant="outline" size="lg">
+                  <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-white">
                     Découvrir les fonctionnalités
                   </Button>
                 </Link>
@@ -99,11 +99,17 @@ export default function HomePage() {
               { icon: Bell, title: "Notifications Auto", desc: "Tout le monde est informé en temps réel des changements d'emploi du temps." }
             ].map((feature, i) => (
               <Card key={i} className="hover:border-primary transition-all duration-300 group">
-                <div className="bg-blue-50 text-primary p-3 rounded-xl w-fit mb-4 group-hover:bg-primary group-hover:text-white transition-colors">
-                  <feature.icon size={28} />
-                </div>
-                <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-                <p className="text-slate-secondary text-sm leading-relaxed">{feature.desc}</p>
+                <CardHeader className="pb-2">
+                  <div className="bg-blue-50 text-primary p-3 rounded-xl w-fit mb-2 group-hover:bg-primary group-hover:text-white transition-colors">
+                    <feature.icon size={28} />
+                  </div>
+                  <CardTitle className="text-lg font-bold">{feature.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-slate-secondary text-sm leading-relaxed">
+                    {feature.desc}
+                  </CardDescription>
+                </CardContent>
               </Card>
             ))}
           </div>
@@ -121,10 +127,10 @@ export default function HomePage() {
               Rejoignez les dizaines d'universités qui optimisent déjà leur gestion académique avec AbsenceFlow.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-white text-primary hover:bg-slate-100">
+              <Button size="lg" className="bg-white text-primary hover:bg-slate-100 border-none">
                 Demander une démo
               </Button>
-              <Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10">
+              <Button variant="outline" size="lg" className="border-white text-white hover:bg-white/10 hover:text-white">
                 Nous contacter
               </Button>
             </div>

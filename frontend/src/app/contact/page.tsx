@@ -3,8 +3,18 @@
 import React from "react";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
 import Container from "@/components/ui/Container";
-import Button from "@/components/ui/Button";
-import Card from "@/components/ui/Card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 export default function ContactPage() {
   return (
@@ -20,40 +30,44 @@ export default function ContactPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Contact Info */}
           <div className="lg:col-span-1 space-y-8">
-            <Card className="bg-primary text-white border-none">
-              <h3 className="text-xl font-bold mb-6 text-white">Informations de contact</h3>
-              <ul className="space-y-8">
-                <li className="flex items-start gap-4">
-                  <div className="bg-white/10 p-2 rounded-lg">
-                    <Mail size={20} />
-                  </div>
-                  <div>
-                    <p className="font-bold">Email</p>
-                    <p className="text-blue-100 text-sm">support@absenceflow.fr</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-4">
-                  <div className="bg-white/10 p-2 rounded-lg">
-                    <Phone size={20} />
-                  </div>
-                  <div>
-                    <p className="font-bold">Téléphone</p>
-                    <p className="text-blue-100 text-sm">+33 1 23 45 67 89</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-4">
-                  <div className="bg-white/10 p-2 rounded-lg">
-                    <MapPin size={20} />
-                  </div>
-                  <div>
-                    <p className="font-bold">Adresse</p>
-                    <p className="text-blue-100 text-sm">
-                      12 Rue de l'Université<br />
-                      75007 Paris, France
-                    </p>
-                  </div>
-                </li>
-              </ul>
+            <Card className="bg-primary text-white border-none shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-white">Informations de contact</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-8">
+                  <li className="flex items-start gap-4">
+                    <div className="bg-white/10 p-2 rounded-lg">
+                      <Mail size={20} />
+                    </div>
+                    <div>
+                      <p className="font-bold">Email</p>
+                      <p className="text-blue-100 text-sm">support@absenceflow.fr</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-4">
+                    <div className="bg-white/10 p-2 rounded-lg">
+                      <Phone size={20} />
+                    </div>
+                    <div>
+                      <p className="font-bold">Téléphone</p>
+                      <p className="text-blue-100 text-sm">+33 1 23 45 67 89</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-4">
+                    <div className="bg-white/10 p-2 rounded-lg">
+                      <MapPin size={20} />
+                    </div>
+                    <div>
+                      <p className="font-bold">Adresse</p>
+                      <p className="text-blue-100 text-sm">
+                        12 Rue de l'Université<br />
+                        75007 Paris, France
+                      </p>
+                    </div>
+                  </li>
+                </ul>
+              </CardContent>
             </Card>
 
             <div className="p-8 rounded-2xl bg-white border border-slate-200">
@@ -66,56 +80,49 @@ export default function ContactPage() {
 
           {/* Contact Form */}
           <div className="lg:col-span-2">
-            <Card>
-              <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <Card className="shadow-lg border-slate-200">
+              <CardContent className="pt-6">
+                <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="nom">Nom</Label>
+                      <Input id="nom" placeholder="Votre nom" className="rounded-xl border-slate-200" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" type="email" placeholder="votre@email.com" className="rounded-xl border-slate-200" />
+                    </div>
+                  </div>
+                  
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-primary" htmlFor="nom">Nom</label>
-                    <input 
-                      type="text" 
-                      id="nom" 
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                      placeholder="Votre nom"
+                    <Label htmlFor="sujet">Sujet</Label>
+                    <Select>
+                      <SelectTrigger id="sujet" className="rounded-xl border-slate-200">
+                        <SelectValue placeholder="Choisir un sujet" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="info">Demande d'information</SelectItem>
+                        <SelectItem value="support">Support technique</SelectItem>
+                        <SelectItem value="partner">Partenariat</SelectItem>
+                        <SelectItem value="other">Autre</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="message">Message</Label>
+                    <Textarea 
+                      id="message" 
+                      placeholder="Comment pouvons-nous vous aider ?" 
+                      className="min-h-[150px] rounded-xl border-slate-200 resize-none"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-primary" htmlFor="email">Email</label>
-                    <input 
-                      type="email" 
-                      id="email" 
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                      placeholder="votre@email.com"
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-primary" htmlFor="sujet">Sujet</label>
-                  <select 
-                    id="sujet"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all appearance-none bg-white"
-                  >
-                    <option>Demande d'information</option>
-                    <option>Support technique</option>
-                    <option>Partenariat</option>
-                    <option>Autre</option>
-                  </select>
-                </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-primary" htmlFor="message">Message</label>
-                  <textarea 
-                    id="message" 
-                    rows={6}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none"
-                    placeholder="Comment pouvons-nous vous aider ?"
-                  ></textarea>
-                </div>
-
-                <Button className="w-full gap-2" size="lg">
-                  Envoyer le message <Send size={18} />
-                </Button>
-              </form>
+                  <Button className="w-full gap-2 rounded-xl" size="lg">
+                    Envoyer le message <Send size={18} />
+                  </Button>
+                </form>
+              </CardContent>
             </Card>
           </div>
         </div>

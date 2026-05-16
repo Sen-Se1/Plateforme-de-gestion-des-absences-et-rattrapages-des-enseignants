@@ -2,72 +2,79 @@ import React from "react";
 import Link from "next/link";
 import { GraduationCap, Mail, Phone, MapPin } from "lucide-react";
 import Container from "./Container";
+import { Separator } from "@/components/ui/separator";
 
 const Footer = () => {
+  const currentYear = new Date().getFullYear();
+
   return (
-    <footer className="bg-slate-900 text-slate-300 py-12">
+    <footer className="bg-slate-950 text-slate-300 py-16">
       <Container>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           {/* Brand */}
-          <div className="col-span-1 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="bg-primary p-1 rounded-md text-white">
-                <GraduationCap size={20} />
+          <div className="space-y-6">
+            <Link href="/" className="flex items-center gap-2 group w-fit">
+              <div className="bg-primary p-1.5 rounded-lg text-white group-hover:bg-primary-light transition-colors">
+                <GraduationCap size={24} />
               </div>
               <span className="font-poppins font-bold text-xl text-white tracking-tight">
                 Absence<span className="text-primary-light">Flow</span>
               </span>
             </Link>
-            <p className="text-sm leading-relaxed">
-              La solution complète pour la gestion des absences et l'organisation des rattrapages au sein de votre établissement.
+            <p className="text-slate-400 text-sm leading-relaxed">
+              La solution intelligente pour la gestion des absences et l'organisation des rattrapages dans l'enseignement supérieur.
             </p>
           </div>
 
-          {/* Quick Links */}
+          {/* Links */}
           <div>
             <h4 className="font-bold text-white mb-6 uppercase text-xs tracking-widest">Navigation</h4>
-            <ul className="space-y-4 text-sm">
-              <li><Link href="/" className="hover:text-primary-light transition-colors">Accueil</Link></li>
-              <li><Link href="/features" className="hover:text-primary-light transition-colors">Fonctionnalités</Link></li>
-              <li><Link href="/about" className="hover:text-primary-light transition-colors">À propos</Link></li>
-              <li><Link href="/contact" className="hover:text-primary-light transition-colors">Contact</Link></li>
+            <ul className="space-y-4">
+              {["Accueil", "Fonctionnalités", "À propos", "Contact"].map((link) => (
+                <li key={link}>
+                  <Link href={`/${link === "Accueil" ? "" : link.toLowerCase().replace("à ", "")}`} className="text-slate-400 text-sm hover:text-primary-light transition-colors">
+                    {link}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Features */}
+          {/* Solutions */}
           <div>
             <h4 className="font-bold text-white mb-6 uppercase text-xs tracking-widest">Solution</h4>
-            <ul className="space-y-4 text-sm">
-              <li>Gestion des Absences</li>
-              <li>Planning des Rattrapages</li>
-              <li>Notifications en Temps Réel</li>
-              <li>Tableaux de Bord</li>
+            <ul className="space-y-4">
+              {["Gestion des Absences", "Planning des Rattrapages", "Notifications Temps Réel", "Tableaux de Bord"].map((item) => (
+                <li key={item} className="text-slate-400 text-sm">{item}</li>
+              ))}
             </ul>
           </div>
 
           {/* Contact */}
           <div>
             <h4 className="font-bold text-white mb-6 uppercase text-xs tracking-widest">Contact</h4>
-            <ul className="space-y-4 text-sm">
-              <li className="flex items-center gap-3">
+            <ul className="space-y-4">
+              <li className="flex items-center gap-3 text-slate-400 text-sm">
                 <Mail size={16} className="text-primary-light" />
-                <span>contact@absenceflow.univ.fr</span>
+                contact@absenceflow.univ.fr
               </li>
-              <li className="flex items-center gap-3">
+              <li className="flex items-center gap-3 text-slate-400 text-sm">
                 <Phone size={16} className="text-primary-light" />
-                <span>+33 1 23 45 67 89</span>
+                +33 1 23 45 67 89
               </li>
-              <li className="flex items-center gap-3">
+              <li className="flex items-center gap-3 text-slate-400 text-sm">
                 <MapPin size={16} className="text-primary-light" />
-                <span>Université de Paris, France</span>
+                Université de Paris, France
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-slate-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
-          <p>© {new Date().getFullYear()} AbsenceFlow. Tous droits réservés.</p>
-          <div className="flex gap-6">
+        <Separator className="bg-white/10" />
+
+        <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-[10px] uppercase tracking-widest">
+          <p>© {currentYear} AbsenceFlow. Tous droits réservés.</p>
+          <div className="flex gap-8">
             <Link href="#" className="hover:text-white transition-colors">Mentions Légales</Link>
             <Link href="#" className="hover:text-white transition-colors">Confidentialité</Link>
           </div>

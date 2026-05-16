@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Menu, X, GraduationCap } from "lucide-react";
 import Container from "./Container";
-import Button from "./Button";
+import { Button } from "./button";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,7 +41,7 @@ const Header = () => {
                 {item.name}
               </Link>
             ))}
-            <Button variant="primary" size="sm">
+            <Button variant="default" size="sm">
               Se connecter
             </Button>
           </nav>
@@ -74,7 +74,7 @@ const Header = () => {
               </Link>
             ))}
             <div className="pt-2 border-t border-slate-100">
-              <Button variant="primary" className="w-full">
+              <Button variant="default" className="w-full">
                 Se connecter
               </Button>
             </div>
