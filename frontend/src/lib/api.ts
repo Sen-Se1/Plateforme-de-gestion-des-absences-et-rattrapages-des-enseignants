@@ -22,5 +22,9 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
     throw new Error(errorData.detail || errorData.message || "Une erreur est survenue");
   }
 
+  if (response.status === 204) {
+    return null;
+  }
+
   return response.json();
 }

@@ -6,6 +6,7 @@ import Footer from "@/components/ui/Footer";
 import { cn } from "@/lib/utils";
 import SessionProvider from "@/components/providers/SessionProvider";
 import ConditionalLayout from "@/components/layout/ConditionalLayout";
+import { Toaster } from "sonner";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -36,6 +37,7 @@ export default function RootLayout({
         <SessionProvider>
           <ConditionalLayout>
             {children}
+            <Toaster position="top-right" richColors />
           </ConditionalLayout>
         </SessionProvider>
       </body>
