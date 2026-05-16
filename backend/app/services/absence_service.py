@@ -115,7 +115,7 @@ class AbsenceService:
         return db_item
 
     @staticmethod
-    def update_absence(db: Session, id: int, enseignant_id: int, data: AbsenceUpdate):
+    def update_absence(db: Session, id: int, enseignant_id: int, data: AbsenceUpdate, justificatif: Optional[UploadFile] = None):
         absence = db.query(Absence).filter(Absence.id == id).first()
         if not absence:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Absence non trouvée")
@@ -140,6 +140,11 @@ class AbsenceService:
             
         for key, value in update_data.items():
             setattr(absence, key, value)
+            
+        # Handle file upload if provided
+        if justificatif:
+            justificatif_path = save_upload_file(justificatif, subdir="")
+            absence.justificatif = justificatif_path
             
         db.commit()
         db.refresh(absence)

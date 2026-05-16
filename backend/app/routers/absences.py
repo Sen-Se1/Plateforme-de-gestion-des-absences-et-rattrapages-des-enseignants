@@ -102,14 +102,37 @@ async def declare_absence(
 @router.put("/{id}", response_model=AbsenceResponse)
 def update_absence(
     id: int,
-    data: AbsenceUpdate,
+    matiere_id: Optional[str] = Form(None),
+    date_absence: Optional[str] = Form(None),
+    motif: Optional[str] = Form(None),
+    justificatif: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: Utilisateur = Depends(get_current_active_user)
 ):
     if current_user.role != RoleUtilisateur.ENSEIGNANT:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Pas assez d'autorisations")
+    
+    # Filter only provided fields and handle empty strings from multipart/form-data
+    update_data = {}
+    if matiere_id is not None and matiere_id.strip() != "":
+        try:
+            update_data["matiere_id"] = int(matiere_id)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="matiere_id must be an integer")
+            
+    if date_absence is not None and date_absence.strip() != "":
+        try:
+            from datetime import date
+            update_data["date_absence"] = date.fromisoformat(date_absence)
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="date_absence must be a valid date (YYYY-MM-DD)")
+            
+    if motif is not None and motif.strip() != "":
+        update_data["motif"] = motif
+    
+    data = AbsenceUpdate(**update_data)
         
-    return AbsenceService.update_absence(db, id, current_user.id, data)
+    return AbsenceService.update_absence(db, id, current_user.id, data, justificatif)
 
 @router.put("/{id}/valider", response_model=AbsenceResponse)
 def validate_absence(
