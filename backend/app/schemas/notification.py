@@ -1,26 +1,27 @@
-from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
-from app.schemas.utilisateur import UtilisateurSimple
+from pydantic import BaseModel
+from typing import Optional
 
 class NotificationBase(BaseModel):
-    utilisateur_id: int
-    titre: str = Field(..., max_length=200)
-    message: str = Field(...)
-    est_lu: bool = False
+    titre: str
+    message: str
 
 class NotificationCreate(NotificationBase):
-    pass
+    utilisateur_id: int
 
 class NotificationUpdate(BaseModel):
+    titre: Optional[str] = None
+    message: Optional[str] = None
     est_lu: Optional[bool] = None
 
 class NotificationSimple(NotificationBase):
     id: int
-    model_config = ConfigDict(from_attributes=True)
+    est_lu: bool
 
 class NotificationResponse(NotificationBase):
     id: int
-    utilisateur: Optional[UtilisateurSimple] = None
+    est_lu: bool
     created_at: datetime
-    model_config = ConfigDict(from_attributes=True)
+
+    class Config:
+        from_attributes = True

@@ -2,8 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.models import *
 from app.core.database import Base, engine
-from app.routers import auth, utilisateurs, departements, groupes, matieres, salles, emplois_du_temps, absences, rattrapages, dashboard
-# from app.routers import notifications
+from app.routers import auth, utilisateurs, departements, groupes, matieres, salles, emplois_du_temps, absences, rattrapages, dashboard, notifications
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -29,6 +29,7 @@ app.include_router(emplois_du_temps.router, prefix="/api/v1/emplois-du-temps", t
 app.include_router(absences.router, prefix="/api/v1/absences", tags=["absences"])
 app.include_router(rattrapages.router, prefix="/api/v1/rattrapages", tags=["rattrapages"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
+app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
 
 @app.get("/")
 async def root():
