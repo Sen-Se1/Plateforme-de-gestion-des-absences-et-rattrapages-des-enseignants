@@ -1,67 +1,48 @@
-# API Documentation — Gestion des Absences et Rattrapages des Enseignants
+﻿# API Documentation — Gestion des Absences et Rattrapages des Enseignants
 
 **Base URL:** `http://127.0.0.1:8000/api/v1`  
 **Version:** 1.0.0  
-**Auth:** Bearer Token (JWT) — include `Authorization: Bearer <token>` on all protected routes.
+**Authentication:** All protected routes require `Authorization: Bearer <JWT_TOKEN>` header.  
+**Live Docs:** http://127.0.0.1:8000/docs
 
 ---
 
-## Table of Contents
+## Roles & Permissions
 
-1. [Authentication](#1-authentication)
-2. [Users](#2-users)
-3. [Departments](#3-departments)
-4. [Groups](#4-groups)
-5. [Subjects (Matières)](#5-subjects-matières)
-6. [Rooms (Salles)](#6-rooms-salles)
-7. [Timetables (Emplois du Temps)](#7-timetables-emplois-du-temps)
-8. [Absences](#8-absences)
-9. [Makeups (Rattrapages)](#9-makeups-rattrapages)
-10. [Dashboard](#10-dashboard)
-11. [Notifications](#11-notifications)
-12. [Schemas](#12-schemas)
+| Role | Code | Description |
+|---|---|---|
+| System Admin | `admin_systeme` | Full access to everything |
+| Administration | `administration` | Manages absences, rattrapages, groups, users |
+| Teacher | `enseignant` | Declares absences, proposes rattrapages |
+| Student | `etudiant` | Views timetable and upcoming rattrapages |
 
 ---
 
-## Roles
-
-| Role | Description |
-|---|---|
-| `admin_systeme` | Full system access |
-| `administration` | University admin |
-| `enseignant` | Teacher |
-| `etudiant` | Student |
-
----
-
-## Paginated Response Shape
-
-All list endpoints return:
+## Standard Paginated Response
 
 ```json
 {
   "items": [...],
-  "total": 100,
+  "total": 42,
   "page": 1,
   "per_page": 20,
-  "total_pages": 5
+  "total_pages": 3
 }
 ```
 
 ---
 
-## 1. Authentication
+## 1. Authentication (`/api/v1/auth`)
 
-**Base path:** `/auth`
+### `POST /auth/login`
+**Description:** Authenticates a user with email and password. Returns a JWT Bearer token valid for the session. No authentication required to call this endpoint. All subsequent API calls must include this token in the `Authorization` header.
 
-### POST /auth/login
-
-Authenticate and receive a JWT token. No auth required.
+**Access:** Public — no token required.
 
 **Request Body** (`application/json`):
 ```json
 {
-  "email": "user@example.com",
+  "email": "j.dupont@univ.com",
   "mot_de_passe": "password123"
 }
 ```
@@ -69,72 +50,73 @@ Authenticate and receive a JWT token. No auth required.
 **Response 200:**
 ```json
 {
-  "access_token": "eyJ...",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "token_type": "bearer"
 }
 ```
 
-**Error 401:** Invalid credentials.
+**Error 401:** `{"detail": "Identifiants invalides"}` — wrong email or password.
 
 ---
 
-### GET /auth/me
+### `GET /auth/me`
+**Description:** Returns the full profile of the currently authenticated user. Useful for populating the UI after login (name, role, email, active status).
 
-Get the currently authenticated user's profile.
+**Access:** Any authenticated role.
 
-- **Access:** Any authenticated role
-
-**Response 200:** `UtilisateurResponse`
+**Response 200:** `UtilisateurResponse` — full user object including `id`, `nom`, `prenom`, `email`, `role`, `actif`, `created_at`, `updated_at`.
 
 ---
 
-### PUT /auth/me
+### `PUT /auth/me`
+**Description:** Allows the currently logged-in user to update their own profile: name, email, or password. Cannot change their own `role` or `actif` status — those are admin-only operations.
 
-Update own profile.
-
-- **Access:** Any authenticated role
+**Access:** Any authenticated role.
 
 **Request Body** (`application/json`) — all fields optional:
 ```json
 {
   "nom": "Dupont",
   "prenom": "Jean",
-  "email": "new@email.com",
-  "mot_de_passe": "newpassword"
+  "email": "nouveau@email.com",
+  "mot_de_passe": "nouveauMotDePasse"
 }
 ```
 
-**Response 200:** `UtilisateurResponse`  
-**Error 400:** Email already taken.
+**Response 200:** Updated `UtilisateurResponse`.  
+**Error 400:** Email already taken by another account.
 
 ---
 
-## 2. Users
+## 2. Users (`/api/v1/users`)
 
-**Base path:** `/users`  
-**Access:** `admin_systeme` only (all endpoints)
+> All endpoints restricted to `admin_systeme` only.
 
-### GET /users/
+### `GET /users/`
+**Description:** Returns a paginated, filterable list of all platform users. Supports filtering by role (e.g., list all teachers), active status (e.g., only deactivated accounts), and a full-text search across `nom`, `prenom`, and `email`. Useful for the admin user management panel.
 
-List all users with optional filters.
+**Access:** `admin_systeme` only.
 
-| Query Param | Type | Default | Description |
+**Query Parameters:**
+
+| Param | Type | Required | Description |
 |---|---|---|---|
-| `page` | int | 1 | Page number |
-| `per_page` | int | 20 | Max 100 |
-| `role` | string | — | Filter by role enum |
-| `actif` | bool | — | Filter by active status |
-| `search` | string | — | Search by name/email |
+| `page` | int | No (default: 1) | Page number |
+| `per_page` | int | No (default: 20, max: 100) | Items per page |
+| `role` | string | No | Filter: `admin_systeme`, `administration`, `enseignant`, `etudiant` |
+| `actif` | bool | No | Filter by `true` (active) or `false` (deactivated) |
+| `search` | string | No | Case-insensitive search across nom, prenom, email |
 
 **Response 200:** `PaginatedResponse[UtilisateurResponse]`
 
 ---
 
-### POST /users/
+### `POST /users/`
+**Description:** Creates a new platform user (teacher, student, admin, etc.). The password is hashed before storage. After creation, a welcome notification is automatically sent to the new user: *"Bienvenue sur la plateforme"*.
 
-Create a new user.
+**Access:** `admin_systeme` only.
 
-**Request Body:**
+**Request Body** (`application/json`):
 ```json
 {
   "nom": "Martin",
@@ -145,224 +127,276 @@ Create a new user.
   "actif": true
 }
 ```
+`actif` defaults to `true` if omitted.
 
 **Response 201:** `UtilisateurResponse`  
-**Error 400:** Email already registered.
+**Error 400:** Email already registered.  
+**Notification triggered:** Welcome notification sent to new user.
 
 ---
 
-### GET /users/{user_id}
+### `GET /users/{user_id}`
+**Description:** Fetches a single user by their unique ID. Returns full profile details. Typically used when clicking on a user in the admin panel.
 
-Get a user by ID.
+**Access:** `admin_systeme` only.
 
-**Response 200:** `UtilisateurResponse` | **Error 404**
-
----
-
-### PUT /users/{user_id}
-
-Update a user. Cannot modify own account.
-
-**Request Body:** `nom`, `prenom`, `email`, `mot_de_passe`, `role`, `actif` — all optional.
+**Path Param:** `user_id` (int)
 
 **Response 200:** `UtilisateurResponse`  
-**Error 403:** Cannot modify own account. | **Error 404**
+**Error 404:** User not found.
 
 ---
 
-### DELETE /users/{user_id}
+### `PUT /users/{user_id}`
+**Description:** Updates any field of a user account: name, email, password, role, or active status. Cannot be used to update your own account (use `PUT /auth/me` instead). If a new `mot_de_passe` is provided, it is automatically hashed.
 
-Delete a user. Cannot delete own account.
+**Access:** `admin_systeme` only. Cannot target own account.
 
-**Response 204** | **Error 403 / 404**
+**Request Body** — all fields optional:
+```json
+{
+  "nom": "Nouveau Nom",
+  "prenom": "Nouveau Prenom",
+  "email": "new@email.com",
+  "mot_de_passe": "newpass",
+  "role": "administration",
+  "actif": false
+}
+```
+
+**Response 200:** Updated `UtilisateurResponse`  
+**Error 403:** Attempting to update own account.  
+**Error 404:** User not found.
 
 ---
 
-### PUT /users/{user_id}/activer
+### `DELETE /users/{user_id}`
+**Description:** Permanently deletes a user account. Before deletion, a notification *"Compte supprimé"* is sent to the user. Cannot delete own account. This operation is irreversible.
 
-Activate a user account.
+**Access:** `admin_systeme` only. Cannot target own account.
 
-**Response 200:** `UtilisateurResponse`
-
----
-
-### PUT /users/{user_id}/desactiver
-
-Deactivate a user account.
-
-**Response 200:** `UtilisateurResponse`
+**Response 204:** No content — successful deletion.  
+**Error 403:** Attempting to delete own account.  
+**Error 404:** User not found.  
+**Notification triggered:** "Compte supprimé" sent to the deleted user.
 
 ---
 
-## 3. Departments
+### `PUT /users/{user_id}/activer`
+**Description:** Reactivates a previously deactivated user account, allowing them to log in again. Sends a notification to the user informing them their account is active.
 
-**Base path:** `/departements`
+**Access:** `admin_systeme` only. Cannot target own account.
 
-### GET /departements/
+**Response 200:** `UtilisateurResponse` with `actif: true`  
+**Error 404:** User not found.  
+**Notification triggered:** "Compte réactivé" sent to the user.
 
-- **Access:** `admin_systeme`, `administration`
+---
 
-**Query Params:** `page`, `per_page`, `search`
+### `PUT /users/{user_id}/desactiver`
+**Description:** Deactivates a user account without deleting it. The user will be blocked from logging in. Sends a notification. Useful for suspending accounts temporarily.
+
+**Access:** `admin_systeme` only. Cannot target own account.
+
+**Response 200:** `UtilisateurResponse` with `actif: false`  
+**Error 404:** User not found.  
+**Notification triggered:** "Compte désactivé" sent to the user.
+
+---
+
+## 3. Departments (`/api/v1/departements`)
+
+### `GET /departements/`
+**Description:** Lists all departments with optional search by name. Departments are top-level organizational units under which groups and subjects are organized.
+
+**Access:** `admin_systeme`, `administration`.
+
+**Query Params:** `page`, `per_page`, `search` (optional name filter)
 
 **Response 200:** `PaginatedResponse[DepartementResponse]`
 
 ---
 
-### POST /departements/
+### `POST /departements/`
+**Description:** Creates a new department. Department names should be unique. Only the system admin can create departments as they are structural entities.
 
-- **Access:** `admin_systeme` only
+**Access:** `admin_systeme` only.
 
-**Request Body:** `{ "nom": "Informatique" }`
+**Request Body:**
+```json
+{ "nom": "Informatique" }
+```
+`nom` max length: 100 characters.
 
 **Response 201:** `DepartementResponse`
 
 ---
 
-### PUT /departements/{departement_id}
+### `PUT /departements/{departement_id}`
+**Description:** Updates the name of an existing department. Has no cascading effect on linked groups or subjects.
 
-- **Access:** `admin_systeme` only
+**Access:** `admin_systeme` only.
 
-**Request Body:** `{ "nom": "Nouveau nom" }` (optional)
+**Request Body:** `{ "nom": "Nouveau Nom" }` — optional.
 
-**Response 200:** `DepartementResponse` | **Error 404**
-
----
-
-### DELETE /departements/{departement_id}
-
-- **Access:** `admin_systeme` only
-
-**Response 204**  
-**Error 400:** Has linked groups/subjects. | **Error 404**
+**Response 200:** `DepartementResponse`  
+**Error 404:** Department not found.
 
 ---
 
-## 4. Groups
+### `DELETE /departements/{departement_id}`
+**Description:** Permanently deletes a department. Will fail if the department still has linked groups or subjects — those must be removed first to preserve referential integrity.
 
-**Base path:** `/groupes`
+**Access:** `admin_systeme` only.
 
-### GET /groupes/
+**Response 204:** No content.  
+**Error 400:** Department has linked groups or subjects — cannot delete.  
+**Error 404:** Department not found.
 
-- **Access:** `admin_systeme`, `administration`, `enseignant`
+---
+
+## 4. Groups (`/api/v1/groupes`)
+
+### `GET /groupes/`
+**Description:** Lists all student groups across all departments. Teachers can see this list to know which groups exist. Supports search by group name and pagination.
+
+**Access:** `admin_systeme`, `administration`, `enseignant`.
 
 **Query Params:** `page`, `per_page`, `search`
 
-**Response 200:** `PaginatedResponse[GroupeResponse]`
+**Response 200:** `PaginatedResponse[GroupeResponse]` — each group includes its department info and student list.
 
 ---
 
-### POST /groupes/
+### `POST /groupes/`
+**Description:** Creates a new student group linked to a department. The department must already exist. Group names should be descriptive (e.g., "Groupe A", "L2 Info S3").
 
-- **Access:** `admin_systeme`, `administration`
+**Access:** `admin_systeme`, `administration`.
 
 **Request Body:**
 ```json
-{ "nom": "Groupe A", "departement_id": 1 }
+{
+  "nom": "Groupe A",
+  "departement_id": 1
+}
 ```
 
-**Response 201:** `GroupeResponse` | **Error 400:** Department not found.
+**Response 201:** `GroupeResponse`  
+**Error 400:** Department does not exist.
 
 ---
 
-### GET /groupes/{groupe_id}
+### `GET /groupes/{groupe_id}`
+**Description:** Returns full details of a single group including its department and the list of students currently enrolled in it.
 
-- **Access:** `admin_systeme`, `administration`, `enseignant`
+**Access:** `admin_systeme`, `administration`, `enseignant`.
 
-**Response 200:** `GroupeResponse` | **Error 404**
-
----
-
-### PUT /groupes/{groupe_id}
-
-- **Access:** `admin_systeme`, `administration`
-
-**Request Body:** `nom`, `departement_id` — both optional.
-
-**Response 200:** `GroupeResponse` | **Error 404**
+**Response 200:** `GroupeResponse`  
+**Error 404:** Group not found.
 
 ---
 
-### DELETE /groupes/{groupe_id}
+### `PUT /groupes/{groupe_id}`
+**Description:** Updates a group's name or moves it to a different department. If changing the department, the new department must exist.
 
-- **Access:** `admin_systeme` only
+**Access:** `admin_systeme`, `administration`.
 
-**Response 204**  
-**Error 400:** Used in timetable. | **Error 404**
+**Request Body:** `nom` and/or `departement_id` — both optional.
+
+**Response 200:** `GroupeResponse`  
+**Error 404:** Group or department not found.
 
 ---
 
-### GET /groupes/departement/{departement_id}
+### `DELETE /groupes/{groupe_id}`
+**Description:** Deletes a group. Will fail if the group is still referenced in any timetable entry (`EmploiDuTemps`). Remove timetable entries first before deleting the group.
 
-List groups for a department.
+**Access:** `admin_systeme` only.
 
-- **Access:** `admin_systeme`, `administration`, `enseignant`
+**Response 204:** No content.  
+**Error 400:** Group is used in at least one timetable entry.  
+**Error 404:** Group not found.
+
+---
+
+### `GET /groupes/departement/{departement_id}`
+**Description:** Lists all groups belonging to a specific department. Useful for filtering groups when building timetables or assigning students.
+
+**Access:** `admin_systeme`, `administration`, `enseignant`.
 
 **Query Params:** `page`, `per_page`
 
-**Response 200:** `PaginatedResponse[GroupeResponse]` | **Error 404**
+**Response 200:** `PaginatedResponse[GroupeResponse]`  
+**Error 404:** Department not found.
 
 ---
 
-### POST /groupes/{groupe_id}/etudiants
+### `POST /groupes/{groupe_id}/etudiants`
+**Description:** Adds one or more students to a group in a single call. Each student must have role `etudiant`. If any student is already in a *different* group, the entire operation is blocked (students can only belong to one group). Students already in the same target group are silently skipped. A notification *"Affectation à un groupe"* is sent to each successfully added student.
 
-Add students to a group.
-
-- **Access:** `administration` only
+**Access:** `administration` only.
 
 **Request Body:**
 ```json
 { "etudiants_ids": [3, 4, 5] }
 ```
 
-**Response 200:** `{ "message": "...", "errors": [] }`  
-**Error 409:** Students already in another group.
+**Response 200:**
+```json
+{ "message": "3 étudiants traités avec succès", "errors": [] }
+```
+
+**Error 409:** One or more students are already in a different group — returns their IDs.  
+**Error 400:** Invalid student IDs.  
+**Notification triggered:** "Affectation à un groupe" for each added student.
 
 ---
 
-### DELETE /groupes/{groupe_id}/etudiants/{etudiant_id}
+### `DELETE /groupes/{groupe_id}/etudiants/{etudiant_id}`
+**Description:** Removes a single student from a group. After removal, the student has no group affiliation and can be assigned to another group. Sends a notification to the removed student.
 
-Remove a student from a group.
+**Access:** `administration` only.
 
-- **Access:** `administration` only
-
-**Response 204** | **Error 404**
+**Response 204:** No content.  
+**Error 404:** Group not found, or student not in this group.  
+**Notification triggered:** "Retrait d'un groupe" sent to the student.
 
 ---
 
-### GET /groupes/{groupe_id}/etudiants
+### `GET /groupes/{groupe_id}/etudiants`
+**Description:** Returns a paginated list of all students enrolled in a specific group. Useful for admin panels showing group membership.
 
-List students in a group.
-
-- **Access:** `admin_systeme`, `administration`, `enseignant`
+**Access:** `admin_systeme`, `administration`, `enseignant`.
 
 **Query Params:** `page`, `per_page`
 
-**Response 200:** `PaginatedResponse[UtilisateurResponse]`
+**Response 200:** `PaginatedResponse[UtilisateurResponse]`  
+**Error 404:** Group not found.
 
 ---
 
-## 5. Subjects (Matières)
+## 5. Subjects / Matières (`/api/v1/matieres`)
 
-**Base path:** `/matieres`
+### `GET /matieres/`
+**Description:** Lists all subjects across all departments. Teachers can see their assigned subjects here. Supports search by subject name.
 
-### GET /matieres/
-
-- **Access:** `admin_systeme`, `administration`, `enseignant`
+**Access:** `admin_systeme`, `administration`, `enseignant`.
 
 **Query Params:** `page`, `per_page`, `search`
 
-**Response 200:** `PaginatedResponse[MatiereResponse]`
+**Response 200:** `PaginatedResponse[MatiereResponse]` — includes department and teacher info.
 
 ---
 
-### POST /matieres/
+### `POST /matieres/`
+**Description:** Creates a new subject (course). Must belong to an existing department. Optionally assigned to a teacher at creation time. If `enseignant_id` is provided, the teacher must exist and have role `enseignant`.
 
-- **Access:** `admin_systeme`, `administration`
+**Access:** `admin_systeme`, `administration`.
 
 **Request Body:**
 ```json
 {
-  "nom": "Algorithmique",
+  "nom": "Algorithmique Avancée",
   "departement_id": 1,
   "enseignant_id": 3
 }
@@ -370,55 +404,60 @@ List students in a group.
 `enseignant_id` is optional.
 
 **Response 201:** `MatiereResponse`  
-**Error 400:** Department or teacher invalid.
+**Error 400:** Department or teacher not found / invalid.
 
 ---
 
-### GET /matieres/{matiere_id}
+### `GET /matieres/{matiere_id}`
+**Description:** Retrieves full details of a subject including its department and assigned teacher.
 
-- **Access:** `admin_systeme`, `administration`, `enseignant`
+**Access:** `admin_systeme`, `administration`, `enseignant`.
 
-**Response 200:** `MatiereResponse` | **Error 404**
+**Response 200:** `MatiereResponse`  
+**Error 404:** Subject not found.
 
 ---
 
-### PUT /matieres/{matiere_id}
+### `PUT /matieres/{matiere_id}`
+**Description:** Updates a subject's name, department, or assigned teacher. Changing the teacher assignment will affect future absence declarations (the new teacher will own this subject).
 
-- **Access:** `admin_systeme`, `administration`
+**Access:** `admin_systeme`, `administration`.
 
 **Request Body:** `nom`, `departement_id`, `enseignant_id` — all optional.
 
-**Response 200:** `MatiereResponse` | **Error 404**
+**Response 200:** `MatiereResponse`  
+**Error 404:** Subject, department, or teacher not found.
 
 ---
 
-### DELETE /matieres/{matiere_id}
+### `DELETE /matieres/{matiere_id}`
+**Description:** Permanently deletes a subject. Exercise caution — this may affect existing absences and timetable entries that reference it.
 
-- **Access:** `admin_systeme` only
+**Access:** `admin_systeme` only.
 
-**Response 204** | **Error 404**
+**Response 204:** No content.  
+**Error 404:** Subject not found.
 
 ---
 
-### GET /matieres/enseignant/{enseignant_id}
+### `GET /matieres/enseignant/{enseignant_id}`
+**Description:** Lists all subjects assigned to a specific teacher. Teachers use this to know which courses they can declare absences for. Admins use it to manage teacher workloads.
 
-List subjects by teacher.
-
-- **Access:** `admin_systeme`, `administration`, `enseignant`
+**Access:** `admin_systeme`, `administration`, `enseignant`.
 
 **Query Params:** `page`, `per_page`
 
-**Response 200:** `PaginatedResponse[MatiereResponse]` | **Error 404**
+**Response 200:** `PaginatedResponse[MatiereResponse]`  
+**Error 404:** Teacher not found.
 
 ---
 
-## 6. Rooms (Salles)
+## 6. Rooms / Salles (`/api/v1/salles`)
 
-**Base path:** `/salles`
+### `GET /salles/`
+**Description:** Lists all classrooms/lecture halls available on the platform. Supports search by room name. Admins use this to manage rooms; teachers may browse it to see options when proposing a rattrapage.
 
-### GET /salles/
-
-- **Access:** `admin_systeme`, `administration`, `enseignant`
+**Access:** `admin_systeme`, `administration`, `enseignant`.
 
 **Query Params:** `page`, `per_page`, `search`
 
@@ -426,142 +465,155 @@ List subjects by teacher.
 
 ---
 
-### GET /salles/disponibles
+### `GET /salles/disponibles`
+**Description:** Checks which rooms are available (not booked) for a given date and time slot. The system checks both the weekly recurring timetable (`EmploiDuTemps`) and already-scheduled rattrapages to determine availability. Teachers use this before proposing a rattrapage to find a free room.
 
-Find available rooms for a time slot.
+**Access:** All authenticated roles.
 
-- **Access:** All authenticated roles
-
-**Required Query Params:**
+**Required Query Parameters:**
 
 | Param | Type | Description |
 |---|---|---|
-| `date` | date | YYYY-MM-DD |
-| `heure_debut` | time | HH:MM |
-| `heure_fin` | time | HH:MM |
+| `date` | date (YYYY-MM-DD) | The date to check |
+| `heure_debut` | time (HH:MM) | Start time of the desired slot |
+| `heure_fin` | time (HH:MM) | End time of the desired slot |
+| `page` | int | Default: 1 |
+| `per_page` | int | Default: 20 |
 
-**Optional:** `page`, `per_page`
-
-**Response 200:** `PaginatedResponse[SalleResponse]`  
-**Error 400:** Start must be before end.
-
----
-
-### GET /salles/{salle_id}
-
-- **Access:** `admin_systeme`, `administration`, `enseignant`
-
-**Response 200:** `SalleResponse` | **Error 404**
+**Response 200:** `PaginatedResponse[SalleResponse]` — only rooms with no conflicts.  
+**Error 400:** Start time must be strictly before end time.
 
 ---
 
-### POST /salles/
+### `GET /salles/{salle_id}`
+**Description:** Returns details of a single room by ID including its name and capacity.
 
-- **Access:** `admin_systeme`, `administration`
+**Access:** `admin_systeme`, `administration`, `enseignant`.
+
+**Response 200:** `SalleResponse`  
+**Error 404:** Room not found.
+
+---
+
+### `POST /salles/`
+**Description:** Registers a new classroom or lecture hall. The capacity must be a positive integer. Room names should be unique and descriptive (e.g., "Amphi A", "Salle Info 03").
+
+**Access:** `admin_systeme`, `administration`.
 
 **Request Body:**
 ```json
-{ "nom": "Salle A101", "capacite": 30 }
+{
+  "nom": "Salle B202",
+  "capacite": 45
+}
 ```
 
 **Response 201:** `SalleResponse`
 
 ---
 
-### PUT /salles/{salle_id}
+### `PUT /salles/{salle_id}`
+**Description:** Updates a room's name or capacity. Does not affect existing bookings.
 
-- **Access:** `admin_systeme`, `administration`
+**Access:** `admin_systeme`, `administration`.
 
 **Request Body:** `nom`, `capacite` — both optional.
 
-**Response 200:** `SalleResponse` | **Error 404**
+**Response 200:** `SalleResponse`  
+**Error 404:** Room not found.
 
 ---
 
-### DELETE /salles/{salle_id}
+### `DELETE /salles/{salle_id}`
+**Description:** Deletes a room. Will be blocked if the room has any upcoming rattrapage sessions scheduled (to prevent orphaned bookings). Past bookings are not considered.
 
-- **Access:** `admin_systeme` only
+**Access:** `admin_systeme` only.
 
-**Response 204**  
-**Error 400:** Has future bookings. | **Error 404**
+**Response 204:** No content.  
+**Error 400:** Room has future rattrapage sessions — cannot delete.  
+**Error 404:** Room not found.
 
 ---
 
-## 7. Timetables (Emplois du Temps)
+## 7. Timetables / Emplois du Temps (`/api/v1/emplois-du-temps`)
 
-**Base path:** `/emplois-du-temps`
+> **`jour_semaine` encoding:** `0=Lundi, 1=Mardi, 2=Mercredi, 3=Jeudi, 4=Vendredi, 5=Samedi, 6=Dimanche`
 
-> `jour_semaine`: `0=Lundi, 1=Mardi, 2=Mercredi, 3=Jeudi, 4=Vendredi, 5=Samedi, 6=Dimanche`
+### `GET /emplois-du-temps/groupe/{groupe_id}`
+**Description:** Returns the weekly recurring timetable for a specific student group. Each entry represents a fixed course slot: which subject, in which room, on which day and time. Students can only view timetables for groups they belong to; admins and teachers can view any group.
 
-### GET /emplois-du-temps/groupe/{groupe_id}
+**Access:** All roles. Students must be members of the target group.
 
-Timetable for a group. Students must be group members.
+**Query Parameters:**
 
-- **Access:** All roles
+| Param | Type | Description |
+|---|---|---|
+| `page` | int | Default: 1 |
+| `per_page` | int | Default: 20 |
+| `jour_semaine` | int (0–6) | Filter by day of week (optional) |
 
-**Query Params:** `page`, `per_page`, `jour_semaine` (0–6, optional)
+**Response 200:** `PaginatedResponse[EmploiDuTempsResponse]`  
+**Error 403:** Student not in this group.
+
+---
+
+### `GET /emplois-du-temps/etudiant`
+**Description:** Returns the full weekly timetable for the currently authenticated student, automatically aggregating from all groups the student belongs to. The student does not need to specify their group — it is determined from their session.
+
+**Access:** `etudiant` only.
+
+**Query Params:** `page`, `per_page`, `jour_semaine` (optional, 0–6)
 
 **Response 200:** `PaginatedResponse[EmploiDuTempsResponse]`
 
 ---
 
-### GET /emplois-du-temps/etudiant
+### `GET /emplois-du-temps/enseignant`
+**Description:** Returns the weekly timetable for the currently authenticated teacher, showing all courses they are assigned to teach. Teachers see only their own schedule.
 
-Timetable for the logged-in student.
+**Access:** `enseignant` only.
 
-- **Access:** `etudiant` only
-
-**Query Params:** `page`, `per_page`, `jour_semaine`
-
-**Response 200:** `PaginatedResponse[EmploiDuTempsResponse]`
-
----
-
-### GET /emplois-du-temps/enseignant
-
-Timetable for the logged-in teacher.
-
-- **Access:** `enseignant` only
-
-**Query Params:** `page`, `per_page`, `jour_semaine`
+**Query Params:** `page`, `per_page`, `jour_semaine` (optional, 0–6)
 
 **Response 200:** `PaginatedResponse[EmploiDuTempsResponse]`
 
 ---
 
-### GET /emplois-du-temps/salle/{salle_id}
+### `GET /emplois-du-temps/salle/{salle_id}`
+**Description:** Returns all timetable entries for a specific room. Useful for admins to see when a room is occupied across the week before scheduling anything.
 
-- **Access:** `admin_systeme`, `administration`
+**Access:** `admin_systeme`, `administration`.
 
-**Query Params:** `page`, `per_page`, `jour_semaine`
-
-**Response 200:** `PaginatedResponse[EmploiDuTempsResponse]`
-
----
-
-### GET /emplois-du-temps/matiere/{matiere_id}
-
-- **Access:** `admin_systeme`, `administration`, `enseignant`
-
-**Query Params:** `page`, `per_page`, `jour_semaine`
+**Query Params:** `page`, `per_page`, `jour_semaine` (optional)
 
 **Response 200:** `PaginatedResponse[EmploiDuTempsResponse]`
 
 ---
 
-### GET /emplois-du-temps/conflits-planning
+### `GET /emplois-du-temps/matiere/{matiere_id}`
+**Description:** Returns all timetable entries for a specific subject. Admins and teachers use this to see when and where a subject is scheduled across different groups.
 
-Detect scheduling conflicts.
+**Access:** `admin_systeme`, `administration`, `enseignant`.
 
-- **Access:** `admin_systeme`, `administration`
+**Query Params:** `page`, `per_page`, `jour_semaine` (optional)
 
-**Response 200:** List of conflict objects.
+**Response 200:** `PaginatedResponse[EmploiDuTempsResponse]`
 
 ---
 
-### POST /emplois-du-temps/
+### `GET /emplois-du-temps/conflits-planning`
+**Description:** Analyzes the entire timetable and returns all scheduling conflicts: cases where a room is double-booked, a teacher has overlapping courses, or a group has two concurrent sessions. Returns a list of conflict objects with details about each collision.
 
-- **Access:** `admin_systeme`, `administration`
+**Access:** `admin_systeme`, `administration`.
+
+**Response 200:** Array of conflict detail objects.
+
+---
+
+### `POST /emplois-du-temps/`
+**Description:** Creates a new recurring weekly timetable slot. The system automatically checks for conflicts before creation: a room cannot be used by two courses at the same time on the same day, and a teacher cannot teach two classes simultaneously. If any conflict is detected, a `400` is returned with the conflict details.
+
+**Access:** `admin_systeme`, `administration`.
 
 **Request Body:**
 ```json
@@ -576,54 +628,65 @@ Detect scheduling conflicts.
 ```
 
 **Response 201:** `EmploiDuTempsResponse`  
-**Error 400:** Time conflict or invalid hours.
+**Error 400:** `heure_debut >= heure_fin`, or scheduling conflict detected.  
+**Conflict response body:**
+```json
+{
+  "detail": {
+    "message": "Scheduling conflict",
+    "conflicts": ["La salle est déjà occupée de 08:00 à 10:00"]
+  }
+}
+```
 
 ---
 
-### PUT /emplois-du-temps/{id}
+### `PUT /emplois-du-temps/{id}`
+**Description:** Updates an existing timetable entry. All fields are optional. The system re-runs conflict detection after the update. If the new configuration causes any conflict, the update is rejected.
 
-- **Access:** `admin_systeme`, `administration`
+**Access:** `admin_systeme`, `administration`.
 
-**Request Body:** All fields optional.
+**Request Body:** Any subset of `groupe_id`, `matiere_id`, `salle_id`, `jour_semaine`, `heure_debut`, `heure_fin`.
 
-**Response 200:** `EmploiDuTempsResponse` | **Error 404**
-
----
-
-### DELETE /emplois-du-temps/{id}
-
-- **Access:** `admin_systeme`, `administration`
-
-**Response 204**
+**Response 200:** `EmploiDuTempsResponse`  
+**Error 400:** Conflict detected.  
+**Error 404:** Entry not found.
 
 ---
 
-## 8. Absences
+### `DELETE /emplois-du-temps/{id}`
+**Description:** Removes a recurring timetable slot permanently. Does not affect rattrapages already scheduled.
 
-**Base path:** `/absences`
+**Access:** `admin_systeme`, `administration`.
 
-### GET /absences/
+**Response 204:** No content.
 
-List absences. Teachers see only their own.
+---
 
-- **Access:** `admin_systeme`, `administration`, `enseignant`
+## 8. Absences (`/api/v1/absences`)
 
-| Query Param | Type | Description |
+### `GET /absences/`
+**Description:** Returns a paginated list of absence declarations. Admins see all absences from all teachers. Teachers only see their own. Supports filtering by status and specific date.
+
+**Access:** `admin_systeme`, `administration`, `enseignant` (own only).
+
+**Query Parameters:**
+
+| Param | Type | Description |
 |---|---|---|
-| `page` | int | Default 1 |
-| `per_page` | int | Default 20 |
-| `statut` | string | `en_attente` / `valide` / `rejete` |
-| `date_absence` | date | YYYY-MM-DD |
+| `page` | int | Default: 1 |
+| `per_page` | int | Default: 20 |
+| `statut` | string | `en_attente`, `valide`, or `rejete` |
+| `date_absence` | date | Filter by exact date (YYYY-MM-DD) |
 
 **Response 200:** `PaginatedResponse[AbsenceResponse]`
 
 ---
 
-### GET /absences/en-attente
+### `GET /absences/en-attente`
+**Description:** Shortcut endpoint returning only absences with status `en_attente`. Designed for the admin review dashboard so administrators can quickly find all pending absence declarations that need action (validate or reject).
 
-List absences awaiting review.
-
-- **Access:** `admin_systeme`, `administration`
+**Access:** `admin_systeme`, `administration`.
 
 **Query Params:** `page`, `per_page`
 
@@ -631,140 +694,166 @@ List absences awaiting review.
 
 ---
 
-### GET /absences/historique
+### `GET /absences/historique`
+**Description:** Returns the complete absence history for the currently authenticated teacher (all statuses: pending, validated, rejected). Allows teachers to track the lifecycle of their declarations without needing to filter by their own ID.
 
-Teacher's own absence history.
+**Access:** `enseignant` only.
 
-- **Access:** `enseignant` only
+**Query Params:** `page`, `per_page`
 
 **Response 200:** `PaginatedResponse[AbsenceResponse]`
 
 ---
 
-### GET /absences/{id}
+### `GET /absences/{id}`
+**Description:** Returns detailed information about a single absence by ID. Includes the teacher's name, subject name, date, reason, justification file path, and current status.
 
-- **Access:** All authenticated. Teachers see only their own.
+**Access:** Any authenticated user. Teachers can only access their own absences.
 
-**Response 200:** `AbsenceResponse` | **Error 403 / 404**
+**Response 200:** `AbsenceResponse`  
+**Error 403:** Teacher accessing another teacher's absence.  
+**Error 404:** Absence not found.
 
 ---
 
-### POST /absences/
+### `POST /absences/`
+**Description:** Allows a teacher to formally declare an absence. Uses `multipart/form-data` to support optional file upload (medical certificate, etc.). Several business rules are enforced before creation. A notification is automatically sent to all administrators.
 
-Declare a new absence (`multipart/form-data`).
+**Access:** `enseignant` only.
 
-- **Access:** `enseignant` only
+**Content-Type:** `multipart/form-data`
+
+**Form Fields:**
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `matiere_id` | int | Yes | Subject ID |
-| `date_absence` | date | Yes | YYYY-MM-DD |
-| `motif` | string | Yes | Reason |
-| `justificatif` | file | No | Supporting document |
+| `matiere_id` | int | Yes | The subject the teacher is absent from |
+| `date_absence` | date (YYYY-MM-DD) | Yes | The date of the absence |
+| `motif` | string | Yes | Reason for the absence |
+| `justificatif` | file | No | Supporting document (PDF, image, etc.) |
 
-**Business Rules:**
-- Teacher must own the subject.
-- Teacher must have a course scheduled on that day.
-- Date cannot be in the past.
-- No duplicate (same subject + date).
+**Business Rules enforced:**
+1. The teacher must be the assigned teacher for `matiere_id`.
+2. The teacher must have a scheduled course (`EmploiDuTemps`) on the weekday of `date_absence`.
+3. `date_absence` cannot be in the past.
+4. No duplicate: same teacher + same subject + same date (non-rejected) cannot exist.
 
 **Response 201:** `AbsenceResponse`  
-**Error 400:** Rule violation. | **Error 403:** Not a teacher.
+**Error 400:** Any business rule violation.  
+**Error 403:** User is not a teacher.  
+**Notification triggered:** "Nouvelle absence déclarée" sent to all admins.
 
 ---
 
-### PUT /absences/{id}
+### `PUT /absences/{id}`
+**Description:** Allows a teacher to update an absence declaration that is still `en_attente`. Once validated or rejected, it can no longer be modified. Useful for correcting a wrong date or adding a missing justification file. Triggers a notification to administrators.
 
-Update an absence (only while `en_attente`).
+**Access:** `enseignant` only (must own the absence).
 
-- **Access:** `enseignant` only (owner)
+**Content-Type:** `multipart/form-data`
 
-**Form Fields (all optional):** `matiere_id`, `date_absence`, `motif`, `justificatif`
+**Form Fields (all optional):**
 
-**Response 200:** `AbsenceResponse`  
-**Error 400:** Already validated/rejected. | **Error 403:** Not owner.
-
----
-
-### PUT /absences/{id}/valider
-
-Approve an absence.
-
-- **Access:** `admin_systeme`, `administration`
-
-**Response 200:** `AbsenceResponse`
-
----
-
-### PUT /absences/{id}/rejeter
-
-Reject an absence.
-
-- **Access:** `admin_systeme`, `administration`
-
-**Response 200:** `AbsenceResponse`
-
----
-
-### DELETE /absences/{id}
-
-Delete an absence (only while `en_attente`).
-
-- **Access:** `enseignant` only (owner)
-
-**Response 204**  
-**Error 400:** Already validated/rejected.
-
----
-
-## 9. Makeups (Rattrapages)
-
-**Base path:** `/rattrapages`
-
-### GET /rattrapages/
-
-List all makeups. Teachers see only their own.
-
-- **Access:** All authenticated roles
-
-| Query Param | Type | Description |
+| Field | Type | Description |
 |---|---|---|
-| `page` | int | Default 1 |
-| `per_page` | int | Default 20 |
-| `statut` | string | `propose` / `valide` / `annule` |
-| `absence_id` | int | Filter by absence |
-| `date_from` | date | Start of range |
-| `date_to` | date | End of range |
+| `matiere_id` | string (int) | New subject ID |
+| `date_absence` | string (YYYY-MM-DD) | New absence date |
+| `motif` | string | Updated reason |
+| `justificatif` | file | New supporting document |
+
+**Response 200:** Updated `AbsenceResponse`  
+**Error 400:** Absence already validated or rejected — cannot modify.  
+**Error 403:** Not the owner.  
+**Error 404:** Absence not found.  
+**Notification triggered:** "Absence modifiée" sent to all admins.
+
+---
+
+### `PUT /absences/{id}/valider`
+**Description:** Validates (approves) an absence declaration. Once validated, the teacher is authorized to propose a rattrapage (makeup session) for that absence. The teacher receives an automatic notification.
+
+**Access:** `admin_systeme`, `administration`.
+
+**Response 200:** `AbsenceResponse` with `statut: "valide"`  
+**Error 404:** Absence not found.  
+**Notification triggered:** "Absence validée" sent to the teacher.
+
+---
+
+### `PUT /absences/{id}/rejeter`
+**Description:** Rejects an absence declaration. The teacher is notified with the reason for rejection (the `motif` field of the absence). A rejected absence cannot have a rattrapage proposed for it.
+
+**Access:** `admin_systeme`, `administration`.
+
+**Response 200:** `AbsenceResponse` with `statut: "rejete"`  
+**Error 404:** Absence not found.  
+**Notification triggered:** "Absence rejetée" sent to the teacher with the motif.
+
+---
+
+### `DELETE /absences/{id}`
+**Description:** Allows a teacher to withdraw (cancel) a pending absence declaration. Only possible while the status is `en_attente`. Cannot delete validated or rejected absences. Sends a notification to administrators informing them of the withdrawal.
+
+**Access:** `enseignant` only (must own the absence).
+
+**Response 204:** No content.  
+**Error 400:** Absence is already validated or rejected.  
+**Error 403:** Not the owner.  
+**Error 404:** Absence not found.  
+**Notification triggered:** "Absence annulée" sent to all admins.
+
+---
+
+## 9. Makeups / Rattrapages (`/api/v1/rattrapages`)
+
+### `GET /rattrapages/`
+**Description:** Returns a paginated list of rattrapage proposals. Admins see all rattrapages. Teachers see only their own (those linked to their absences). Supports multiple filters for flexible querying.
+
+**Access:** All authenticated roles. Teachers filtered to own only.
+
+**Query Parameters:**
+
+| Param | Type | Description |
+|---|---|---|
+| `page` | int | Default: 1 |
+| `per_page` | int | Default: 20 |
+| `statut` | string | `propose`, `valide`, or `annule` |
+| `absence_id` | int | Show rattrapages for a specific absence |
+| `date_from` | date | Filter rattrapages from this date onwards |
+| `date_to` | date | Filter rattrapages up to this date |
 
 **Response 200:** `PaginatedResponse[RattrapageResponse]`
 
 ---
 
-### GET /rattrapages/a-venir
+### `GET /rattrapages/a-venir`
+**Description:** Returns upcoming (future date) rattrapage sessions that have not been cancelled. Role-aware: teachers see their own upcoming rattrapages; students see only validated ones (those confirmed by administration); admins see all non-cancelled upcoming sessions.
 
-Upcoming makeups. Teachers see their own, students see only validated ones.
+**Access:** All authenticated roles.
 
-- **Access:** All authenticated roles
+**Query Params:** `page`, `per_page`
 
 **Response 200:** `PaginatedResponse[RattrapageResponse]`
 
 ---
 
-### GET /rattrapages/{id}
+### `GET /rattrapages/{id}`
+**Description:** Returns full details of a rattrapage including absence info, teacher name, subject, proposed room, date, time slot, status, and who validated it.
 
-- **Access:** All authenticated. Teachers see only their own.
+**Access:** All authenticated. Teachers can only view their own.
 
-**Response 200:** `RattrapageResponse` | **Error 403 / 404**
+**Response 200:** `RattrapageResponse`  
+**Error 403:** Teacher accessing another teacher's rattrapage.  
+**Error 404:** Not found.
 
 ---
 
-### POST /rattrapages/
+### `POST /rattrapages/`
+**Description:** Allows a teacher to propose a makeup session for one of their validated absences. The system enforces strict conflict detection before accepting the proposal: the room must be free, and the teacher must have no other session at the same time. Notifies administrators upon successful creation.
 
-Propose a makeup session.
+**Access:** `enseignant` only.
 
-- **Access:** `enseignant` only
-
-**Request Body:**
+**Request Body** (`application/json`):
 ```json
 {
   "absence_id": 5,
@@ -775,101 +864,150 @@ Propose a makeup session.
 }
 ```
 
-**Business Rules:**
-- Teacher must own the absence.
-- Absence must be `valide`.
-- Start before end.
-- Makeup date must be after absence date.
-- No existing active makeup for that absence.
-- No room or teacher scheduling conflict.
+**Business Rules enforced:**
+1. Teacher must own the referenced absence.
+2. The absence must be `valide` (not pending or rejected).
+3. `heure_debut` must be strictly before `heure_fin`.
+4. `date_proposee` must be strictly after `date_absence`.
+5. No existing active (non-cancelled) rattrapage for the same absence.
+6. No room conflict: room not in use in weekly timetable or other rattrapages at the same time.
+7. No teacher conflict: teacher not teaching another class or rattrapage at the same time.
 
-**Response 201:** `RattrapageResponse`  
-**Error 400:** Rule/conflict violation.
-
----
-
-### PUT /rattrapages/{id}/valider
-
-Validate a makeup.
-
-- **Access:** `admin_systeme`, `administration`
-
-**Response 200:** `RattrapageResponse`
+**Response 201:** `RattrapageResponse` with `statut: "propose"`  
+**Error 400:** Any rule or conflict violation — message describes which conflict.  
+**Error 403:** Not a teacher, or not the owner of the absence.  
+**Notification triggered:** "Proposition de rattrapage" sent to all admins.
 
 ---
 
-### PUT /rattrapages/{id}/annuler
+### `PUT /rattrapages/{id}/valider`
+**Description:** Administration validates a proposed rattrapage, confirming the date, time, and room. Once validated, it appears in the schedules of affected students. The teacher receives a notification, and all students in the affected groups receive a "Séance de rattrapage programmée" notification. Affected groups are determined by looking at which groups have this subject in their weekly timetable on the same weekday as the original absence.
 
-Cancel a makeup.
+**Access:** `admin_systeme`, `administration`.
 
-- **Access:** Owner (`enseignant`) or admins
-
-**Response 200:** `RattrapageResponse` | **Error 403**
-
----
-
-### PUT /rattrapages/{id}/affecter-salle
-
-Reassign a room.
-
-- **Access:** `admin_systeme`, `administration`
-
-**Request Body:** `{ "salle_id": 4 }`
-
-**Response 200:** `RattrapageResponse`  
-**Error 400:** Room conflict.
+**Response 200:** `RattrapageResponse` with `statut: "valide"`  
+**Error 404:** Not found.  
+**Notifications triggered:**
+- "Rattrapage validé" → teacher
+- "Séance de rattrapage programmée" → all affected students
 
 ---
 
-### DELETE /rattrapages/{id}
+### `PUT /rattrapages/{id}/annuler`
+**Description:** Cancels a rattrapage. Can be done by the teacher (owner) or an administrator. If the rattrapage was already validated, affected students are also notified. A cancelled rattrapage cannot be reactivated — a new proposal must be created.
 
-Delete a makeup (not if validated).
+**Access:** Owner (`enseignant`) or `admin_systeme`/`administration`.
 
-- **Access:** Owner or admins
-
-**Response 204**  
-**Error 400:** Already validated. | **Error 403:** Not authorized.
+**Response 200:** `RattrapageResponse` with `statut: "annule"`  
+**Error 403:** Not the owner and not an admin.  
+**Error 404:** Not found.  
+**Notifications triggered:**
+- "Rattrapage annulé" → teacher
+- "Rattrapage annulé" → affected students (if it was previously validated)
 
 ---
 
-## 10. Dashboard
+### `PUT /rattrapages/{id}/affecter-salle`
+**Description:** Allows an administrator to change the room of an already-proposed or validated rattrapage. Re-runs conflict detection for the new room before applying the change. The teacher (and students if validated) are notified of the room change.
 
-**Base path:** `/dashboard`
+**Access:** `admin_systeme`, `administration`.
 
-### GET /dashboard/admin/stats
+**Request Body** (`application/json`):
+```json
+{ "salle_id": 4 }
+```
 
-- **Access:** `admin_systeme`, `administration`
+**Response 200:** `RattrapageResponse` with updated `salle_id` and `salle`.  
+**Error 400:** `salle_id` missing, or new room has a conflict.  
+**Error 404:** Rattrapage or room not found.  
+**Notifications triggered:**
+- "Salle de rattrapage modifiée" → teacher
+- "Salle de rattrapage modifiée" → affected students (if validated)
+
+---
+
+### `DELETE /rattrapages/{id}`
+**Description:** Permanently deletes a rattrapage proposal. Cannot be done if the rattrapage has already been validated (to preserve historical records). Allowed for the owning teacher or any admin.
+
+**Access:** Owner (`enseignant`) or `admin_systeme`/`administration`.
+
+**Response 204:** No content.  
+**Error 400:** Cannot delete a validated rattrapage.  
+**Error 403:** Not authorized.  
+**Error 404:** Not found.
+
+---
+
+## 10. Dashboard (`/api/v1/dashboard`)
+
+### `GET /dashboard/admin/stats`
+**Description:** Returns a comprehensive statistics overview for administrators. Includes user counts by role, absence breakdown by status, rattrapage breakdown by status, and infrastructure stats (total rooms, total course slots). Used to populate the admin home dashboard.
+
+**Access:** `admin_systeme`, `administration`.
 
 **Response 200:** `AdminStatsResponse`
 ```json
 {
-  "users": { "total": 14, "enseignants": 2, "etudiants": 10 },
-  "absences": { "total": 5, "en_attente": 2, "validees": 3 },
-  "rattrapages": { "total": 3, "valides": 1 },
-  "salles_et_cours": { "total_salles": 5, "total_cours": 12 }
+  "users": {
+    "total": 14,
+    "enseignants": 2,
+    "etudiants": 10,
+    "administration": 1,
+    "admin_systeme": 1
+  },
+  "absences": {
+    "total": 8,
+    "en_attente": 3,
+    "validees": 4,
+    "rejetees": 1
+  },
+  "rattrapages": {
+    "total": 4,
+    "proposes": 1,
+    "valides": 2,
+    "annules": 1
+  },
+  "salles_et_cours": {
+    "total_salles": 6,
+    "total_cours": 18
+  }
 }
 ```
 
 ---
 
-### GET /dashboard/enseignant/stats
+### `GET /dashboard/enseignant/stats`
+**Description:** Returns personalized statistics for the authenticated teacher: their absence history breakdown, rattrapage status counts, and total number of assigned courses. Used to populate the teacher's personal dashboard.
 
-- **Access:** `enseignant` only
+**Access:** `enseignant` only.
 
 **Response 200:** `TeacherStatsResponse`
 ```json
 {
-  "absences": { "total": 3, "en_attente": 1, "validees": 2 },
-  "rattrapages": { "total": 2, "proposes": 1, "valides": 1 },
-  "cours": { "total": 4 }
+  "absences": {
+    "total": 3,
+    "en_attente": 1,
+    "validees": 2,
+    "rejetees": 0
+  },
+  "rattrapages": {
+    "total": 2,
+    "proposes": 1,
+    "valides": 1,
+    "annules": 0
+  },
+  "cours": {
+    "total": 4
+  }
 }
 ```
 
 ---
 
-### GET /dashboard/etudiant/stats
+### `GET /dashboard/etudiant/stats`
+**Description:** Returns statistics relevant to the authenticated student: their course count, how many teacher absences have affected their schedule, rattrapage counts, and a list of upcoming confirmed rattrapage sessions they need to attend.
 
-- **Access:** `etudiant` only
+**Access:** `etudiant` only.
 
 **Response 200:** `StudentStatsResponse`
 ```json
@@ -877,21 +1015,39 @@ Delete a makeup (not if validated).
   "cours": { "total": 6 },
   "absences_enseignants": { "total": 2 },
   "rattrapages": { "total": 1, "valides": 1 },
-  "list_rattrapages_a_venir": []
+  "list_rattrapages_a_venir": [
+    {
+      "matiere": "Algorithmique",
+      "date_proposee": "2026-06-15",
+      "heure_debut": "14:00",
+      "heure_fin": "16:00",
+      "salle": "Salle B202"
+    }
+  ]
 }
 ```
 
 ---
 
-## 11. Notifications
+## 11. Notifications (`/api/v1/notifications`)
 
-**Base path:** `/notifications`
+> Notifications are created automatically by the system on key events. Users cannot create notifications manually via the API.
 
-### GET /notifications/
+### `GET /notifications/`
+**Description:** Returns all notifications for the currently authenticated user, ordered from newest to oldest. Includes both read and unread notifications. Used to display the full notification history in the UI.
 
-All notifications for the logged-in user.
+**Access:** Any authenticated role (own notifications only).
 
-- **Access:** All authenticated roles
+**Query Params:** `page` (default: 1), `per_page` (default: 20)
+
+**Response 200:** `PaginatedResponse[NotificationResponse]`
+
+---
+
+### `GET /notifications/non-lues`
+**Description:** Returns only unread notifications (`est_lu: false`) for the authenticated user. Used to populate notification badges and alert panels in the UI.
+
+**Access:** Any authenticated role.
 
 **Query Params:** `page`, `per_page`
 
@@ -899,136 +1055,147 @@ All notifications for the logged-in user.
 
 ---
 
-### GET /notifications/non-lues
+### `GET /notifications/{id}`
+**Description:** Fetches a single notification by ID. Only the owner of the notification can access it.
 
-Unread notifications only.
+**Access:** Owner only.
 
-- **Access:** All authenticated roles
-
-**Response 200:** `PaginatedResponse[NotificationResponse]`
-
----
-
-### GET /notifications/{id}
-
-- **Access:** Owner only
-
-**Response 200:** `NotificationResponse` | **Error 404**
+**Response 200:** `NotificationResponse`  
+**Error 404:** Notification not found or not owned by the requester.
 
 ---
 
-### PUT /notifications/{id}/lire
+### `PUT /notifications/{id}/lire`
+**Description:** Marks a specific notification as read (`est_lu: true`). Typically called when a user clicks on a notification in the UI.
 
-Mark a notification as read.
+**Access:** Owner only.
 
-- **Access:** Owner only
-
-**Response 200:** `NotificationResponse`
+**Response 200:** Updated `NotificationResponse` with `est_lu: true`  
+**Error 404:** Not found.
 
 ---
 
-### PUT /notifications/tout-lire
+### `PUT /notifications/tout-lire`
+**Description:** Marks ALL unread notifications of the authenticated user as read in a single call. Useful for the "Mark all as read" button in notification panels.
 
-Mark all notifications as read.
-
-- **Access:** All authenticated roles
+**Access:** Any authenticated role.
 
 **Response 200:**
 ```json
 {
   "message": "Toutes les notifications ont été marquées comme lues",
-  "updated_count": 5
+  "updated_count": 7
 }
 ```
+`updated_count` is the number of notifications that were updated (previously unread).
 
 ---
 
-### DELETE /notifications/{id}
+### `DELETE /notifications/{id}`
+**Description:** Permanently deletes a single notification. Cannot be undone.
 
-- **Access:** Owner only
+**Access:** Owner only.
 
-**Response 204**
+**Response 204:** No content.  
+**Error 404:** Not found.
 
 ---
 
-## 12. Schemas
+## 12. Notification Events Reference
+
+| Event | Recipient(s) | Title | Trigger |
+|---|---|---|---|
+| Teacher declares absence | All admins | Nouvelle absence déclarée | `POST /absences/` |
+| Teacher modifies absence | All admins | Absence modifiée | `PUT /absences/{id}` |
+| Teacher deletes absence | All admins | Absence annulée | `DELETE /absences/{id}` |
+| Absence validated | Teacher | Absence validée | `PUT /absences/{id}/valider` |
+| Absence rejected | Teacher | Absence rejetée | `PUT /absences/{id}/rejeter` |
+| Teacher proposes rattrapage | All admins | Proposition de rattrapage | `POST /rattrapages/` |
+| Rattrapage validated | Teacher + affected students | Rattrapage validé / Séance programmée | `PUT /rattrapages/{id}/valider` |
+| Rattrapage cancelled | Teacher (+ students if was validated) | Rattrapage annulé | `PUT /rattrapages/{id}/annuler` |
+| Room changed | Teacher (+ students if validated) | Salle de rattrapage modifiée | `PUT /rattrapages/{id}/affecter-salle` |
+| Student added to group | That student | Affectation à un groupe | `POST /groupes/{id}/etudiants` |
+| Student removed from group | That student | Retrait d'un groupe | `DELETE /groupes/{id}/etudiants/{id}` |
+| New user created | That user | Bienvenue sur la plateforme | `POST /users/` |
+| User activated | That user | Compte réactivé | `PUT /users/{id}/activer` |
+| User deactivated | That user | Compte désactivé | `PUT /users/{id}/desactiver` |
+| User deleted | That user | Compte supprimé | `DELETE /users/{id}` |
+
+---
+
+## 13. Data Schemas
 
 ### UtilisateurResponse
-
 | Field | Type | Notes |
 |---|---|---|
-| `id` | int | |
-| `nom` | string | max 100 |
-| `prenom` | string | max 100 |
-| `email` | email | max 150 |
-| `role` | RoleUtilisateur | enum |
-| `actif` | bool | default true |
-| `created_at` | datetime | |
-| `updated_at` | datetime | |
+| `id` | int | Unique identifier |
+| `nom` | string | Last name (max 100) |
+| `prenom` | string | First name (max 100) |
+| `email` | email | Unique (max 150) |
+| `role` | RoleUtilisateur | See roles table |
+| `actif` | bool | `false` = account suspended |
+| `created_at` | datetime | ISO 8601 |
+| `updated_at` | datetime | ISO 8601 |
 
 ### AbsenceResponse
-
 | Field | Type | Notes |
 |---|---|---|
 | `id` | int | |
 | `enseignant_id` | int | |
-| `enseignant` | UtilisateurSimple | nullable |
+| `enseignant` | UtilisateurSimple | Nullable |
 | `matiere_id` | int | |
-| `matiere` | MatiereSimple | nullable |
-| `date_absence` | date | |
-| `motif` | string | |
+| `matiere` | MatiereSimple | Nullable |
+| `date_absence` | date | YYYY-MM-DD |
+| `motif` | string | Declared reason |
 | `justificatif` | string | File path, nullable |
 | `statut` | StatutAbsence | `en_attente`/`valide`/`rejete` |
 | `created_at` | datetime | |
 | `updated_at` | datetime | |
 
 ### RattrapageResponse
-
 | Field | Type | Notes |
 |---|---|---|
 | `id` | int | |
 | `absence_id` | int | |
-| `absence` | AbsenceSimple | nullable |
+| `absence` | AbsenceSimple | Nullable |
 | `salle_id` | int | |
-| `salle` | SalleSimple | nullable |
+| `salle` | SalleSimple | Nullable |
 | `date_proposee` | date | |
-| `heure_debut` | time | |
-| `heure_fin` | time | |
+| `heure_debut` | time | HH:MM |
+| `heure_fin` | time | HH:MM |
 | `statut` | StatutRattrapage | `propose`/`valide`/`annule` |
-| `valide_par` | int | Admin ID, nullable |
+| `valide_par` | int | Admin user ID, nullable |
 | `created_at` | datetime | |
 | `updated_at` | datetime | |
 
 ### NotificationResponse
-
 | Field | Type | Notes |
 |---|---|---|
 | `id` | int | |
-| `titre` | string | |
-| `message` | string | |
-| `est_lu` | bool | |
+| `titre` | string | Notification title |
+| `message` | string | Full notification body |
+| `est_lu` | bool | `false` = unread |
 | `created_at` | datetime | |
 
 ### Enumerations
-
 | Enum | Values |
 |---|---|
+| `RoleUtilisateur` | `admin_systeme`, `administration`, `enseignant`, `etudiant` |
 | `StatutAbsence` | `en_attente`, `valide`, `rejete` |
 | `StatutRattrapage` | `propose`, `valide`, `annule` |
-| `RoleUtilisateur` | `admin_systeme`, `administration`, `enseignant`, `etudiant` |
 
 ---
 
-## Common HTTP Status Codes
+## 14. HTTP Status Code Reference
 
-| Code | Meaning |
-|---|---|
-| 200 | OK |
-| 201 | Created |
-| 204 | No Content (successful delete) |
-| 400 | Bad Request — business rule violation |
-| 401 | Unauthorized — missing/invalid token |
-| 403 | Forbidden — insufficient role |
-| 404 | Not Found |
-| 409 | Conflict |
-| 422 | Unprocessable Entity — validation error |
+| Code | Meaning | When |
+|---|---|---|
+| **200** | OK | Successful GET or PUT |
+| **201** | Created | Successful POST |
+| **204** | No Content | Successful DELETE |
+| **400** | Bad Request | Business rule violation, invalid data |
+| **401** | Unauthorized | Missing or invalid JWT token |
+| **403** | Forbidden | Valid token but insufficient role/ownership |
+| **404** | Not Found | Resource does not exist |
+| **409** | Conflict | e.g. student already in another group |
+| **422** | Unprocessable Entity | Pydantic schema validation failed |
