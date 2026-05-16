@@ -67,7 +67,6 @@ export default function ProfileForm() {
     setError(null);
 
     try {
-      // Prepare data for update (send only non-empty fields for password)
       const updateData: any = {
         nom: values.nom,
         prenom: values.prenom,
@@ -83,7 +82,6 @@ export default function ProfileForm() {
         body: JSON.stringify(updateData),
       });
 
-      // Update local session
       await update({
         ...session,
         user: {

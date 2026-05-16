@@ -17,7 +17,6 @@ export function useNotifications() {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      // Fetch unread notifications for the badge count and dropdown
       const data = await getNotifications(1, 5, true);
       setNotifications(data.items);
       setUnreadCount(data.total);
@@ -28,12 +27,8 @@ export function useNotifications() {
 
   useEffect(() => {
     fetchNotifications();
-
-    // Listen for custom refresh events from other components
     const handleRefresh = () => fetchNotifications();
     window.addEventListener("refresh-notifications", handleRefresh);
-
-    // Polling every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
     return () => {
       window.removeEventListener("refresh-notifications", handleRefresh);

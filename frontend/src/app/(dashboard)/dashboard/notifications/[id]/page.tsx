@@ -32,8 +32,6 @@ export default function NotificationDetailPage() {
       try {
         const data = await getNotificationById(id);
         setNotification(data);
-
-        // If not read, mark it as read automatically
         if (!data.est_lu) {
           await markAsRead(id);
           window.dispatchEvent(new CustomEvent("refresh-notifications"));
@@ -58,7 +56,7 @@ export default function NotificationDetailPage() {
   }
 
   if (!notification) {
-    return null; // Will redirect in useEffect
+    return null;
   }
 
   return (

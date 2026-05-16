@@ -20,37 +20,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-
-interface TeacherStats {
-  absences: {
-    total_absences: number;
-    absences_en_attente: number;
-    absences_validees: number;
-    absences_rejetees: number;
-    absences_par_mois: Array<{ month: string, count: number }>;
-  };
-  rattrapages: {
-    total_rattrapages: number;
-    rattrapages_proposes: number;
-    rattrapages_valides: number;
-    rattrapages_annules: number;
-    rattrapages_par_mois: Array<{ month: string, count: number }>;
-  };
-  cours: {
-    total_cours_par_semaine: number;
-    groupes_enseignes: string[];
-  };
-}
-
-interface Rattrapage {
-  id: number;
-  date_proposee: string;
-  heure_debut: string;
-  heure_fin: string;
-  statut: "propose" | "valide" | "annule";
-  matiere?: { nom: string };
-  salle?: { nom: string };
-}
+import { TeacherStats, Rattrapage } from "@/types/dashboard";
 
 export default function TeacherDashboard() {
   const [stats, setStats] = useState<TeacherStats | null>(null);

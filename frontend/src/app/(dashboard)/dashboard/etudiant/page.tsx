@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { 
-  FileWarning, 
-  CalendarCheck2, 
-  BookOpen, 
+import {
+  FileWarning,
+  CalendarCheck2,
+  BookOpen,
   RefreshCw,
   GraduationCap,
   Calendar,
@@ -22,32 +22,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-
-interface StudentStats {
-  cours: { 
-    total_cours_par_semaine: number;
-    matieres_suivies: string[];
-    groupes_appartenance: string[];
-  };
-  absences_enseignants: { 
-    total: number;
-    en_attente: number;
-    validees: number;
-  };
-  rattrapages: { 
-    total: number;
-    proposes: number;
-    valides: number;
-    a_venir: number;
-  };
-  list_rattrapages_a_venir: Array<{
-    matiere: string;
-    date_proposee: string;
-    heure_debut: string;
-    heure_fin: string;
-    salle: string;
-  }>;
-}
+import { StudentStats } from "@/types/dashboard";
 
 export default function StudentDashboard() {
   const [stats, setStats] = useState<StudentStats | null>(null);
@@ -90,37 +65,37 @@ export default function StudentDashboard() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Cours / Semaine" 
-          value={stats.cours?.total_cours_par_semaine || 0} 
-          icon={BookOpen} 
+        <StatCard
+          title="Cours / Semaine"
+          value={stats.cours?.total_cours_par_semaine || 0}
+          icon={BookOpen}
           description={`Groupes : ${stats.cours?.groupes_appartenance?.join(", ") || "Aucun"}`}
-          color="text-indigo-600" 
-          bg="bg-indigo-50" 
+          color="text-indigo-600"
+          bg="bg-indigo-50"
         />
-        <StatCard 
-          title="Absences Profs" 
-          value={stats.absences_enseignants?.total || 0} 
-          icon={FileWarning} 
+        <StatCard
+          title="Absences Profs"
+          value={stats.absences_enseignants?.total || 0}
+          icon={FileWarning}
           description={`${stats.absences_enseignants?.validees || 0} absences confirmées`}
-          color="text-amber-600" 
-          bg="bg-amber-50" 
+          color="text-amber-600"
+          bg="bg-amber-50"
         />
-        <StatCard 
-          title="Rattrapages" 
-          value={stats.rattrapages?.total || 0} 
-          icon={CalendarCheck2} 
+        <StatCard
+          title="Rattrapages"
+          value={stats.rattrapages?.total || 0}
+          icon={CalendarCheck2}
           description={`${stats.rattrapages?.valides || 0} confirmés`}
-          color="text-green-600" 
-          bg="bg-green-50" 
+          color="text-green-600"
+          bg="bg-green-50"
         />
-        <StatCard 
-          title="A venir" 
-          value={stats.rattrapages?.a_venir || 0} 
-          icon={GraduationCap} 
+        <StatCard
+          title="A venir"
+          value={stats.rattrapages?.a_venir || 0}
+          icon={GraduationCap}
           description="Séances programmées"
-          color="text-blue-600" 
-          bg="bg-blue-50" 
+          color="text-blue-600"
+          bg="bg-blue-50"
         />
       </div>
 

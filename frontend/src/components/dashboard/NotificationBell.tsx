@@ -83,7 +83,6 @@ export function NotificationBell() {
                   key={notif.id}
                   onClick={() => {
                     setIsOpen(false);
-                    // Navigate to the detail page.
                     router.push(`/dashboard/notifications/${notif.id}`);
                   }}
                   className={`relative group p-3 rounded-lg border transition-colors cursor-pointer hover:bg-muted/50 ${

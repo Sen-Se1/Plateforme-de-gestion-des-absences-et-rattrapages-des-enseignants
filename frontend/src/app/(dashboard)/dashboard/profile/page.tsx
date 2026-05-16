@@ -1,4 +1,3 @@
-import React from "react";
 import ProfileForm from "@/components/dashboard/ProfileForm";
 
 export const metadata = {

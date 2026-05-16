@@ -62,9 +62,6 @@ export default function NotificationsPage() {
       await markAsRead(id);
       toast.success("Notification marquée comme lue");
       fetchAll();
-      // Also trigger a refresh of the bell unread count if possible
-      // Since they are in the same tab, they might share state if we used a global store,
-      // but here we rely on polling or manual refresh.
       window.dispatchEvent(new CustomEvent("refresh-notifications"));
     } catch (error) {
       toast.error("Erreur");

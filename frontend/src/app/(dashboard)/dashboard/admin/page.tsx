@@ -17,35 +17,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ErrorMessage } from "@/components/ui/error-message";
 import { Button } from "@/components/ui/button";
-
-interface AdminStats {
-  users: {
-    total_enseignants: number;
-    total_etudiants: number;
-    total_administrations: number;
-    total_users: number;
-  };
-  absences: {
-    total_absences: number;
-    absences_en_attente: number;
-    absences_validees: number;
-    absences_rejetees: number;
-    absences_par_mois: Array<{ month: string, count: number }>;
-  };
-  rattrapages: {
-    total_rattrapages: number;
-    rattrapages_proposes: number;
-    rattrapages_valides: number;
-    rattrapages_annules: number;
-    rattrapages_par_mois: Array<{ month: string, count: number }>;
-  };
-  salles_et_cours: {
-    total_salles: number;
-    total_matieres: number;
-    total_groupes: number;
-    total_cours_par_semaine: number;
-  };
-}
+import { AdminStats } from "@/types/dashboard";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);

@@ -1,4 +1,4 @@
-import { getSession } from "next-auth/react";
+import { getSession, signOut } from "next-auth/react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -16,6 +16,13 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
     ...options,
     headers,
   });
+
+  if (response.status === 401) {
+    if (typeof window !== "undefined") {
+      signOut({ callbackUrl: "/login" });
+    }
+    throw new Error("Session expirée, veuillez vous reconnecter.");
+  }
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));

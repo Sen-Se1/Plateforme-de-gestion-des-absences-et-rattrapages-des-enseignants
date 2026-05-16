@@ -5,10 +5,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
-/**
- * Page d'accueil du Dashboard
- * Redirige automatiquement l'utilisateur vers son tableau de bord spécifique selon son rôle.
- */
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -24,7 +20,6 @@ export default function DashboardPage() {
       } else if (role === "etudiant") {
         router.replace("/dashboard/etudiant");
       } else {
-        // Fallback for unknown roles or users without roles
         router.replace("/");
       }
     } else if (status === "unauthenticated") {
