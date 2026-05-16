@@ -14,7 +14,7 @@ class RattrapageBase(BaseModel):
     heure_fin: time
 
 class RattrapageCreate(RattrapageBase):
-    statut: Optional[StatutRattrapage] = StatutRattrapage.PROPOSE
+    pass
 
 class RattrapageUpdate(BaseModel):
     absence_id: Optional[int] = None
