@@ -21,12 +21,9 @@ const Header = () => {
       <Container>
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="bg-primary p-1.5 rounded-lg text-white group-hover:bg-primary-light transition-colors">
-              <GraduationCap size={24} />
-            </div>
+          <Link href="/" className="flex items-center gap-2 group">  
             <span className="font-poppins font-bold text-xl text-primary tracking-tight">
-              Absence<span className="text-slate-primary">Flow</span>
+              Lo<span className="text-slate-primary">Go</span>
             </span>
           </Link>
 

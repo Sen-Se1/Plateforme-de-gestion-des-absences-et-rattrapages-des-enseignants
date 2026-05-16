@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+import Link from "next/link";
+
 export default function TopBar() {
   const { data: session } = useSession();
   const user = session?.user;
@@ -37,10 +39,44 @@ export default function TopBar() {
 
       {/* User Actions */}
       <div className="flex items-center gap-2 md:gap-4">
-        <Button variant="ghost" size="icon" className="relative text-slate-500 hover:text-primary">
-          <Bell size={20} />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-        </Button>
+        {/* Notifications */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="ghost" size="icon" className="relative text-slate-500 hover:text-primary rounded-full">
+                <Bell size={20} />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="end" className="w-80 rounded-xl p-2 shadow-xl border-slate-100">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="font-bold px-4 py-2 border-b border-slate-100 mb-2 flex justify-between items-center">
+                <span>Notifications</span>
+                <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">3 nouvelles</span>
+              </DropdownMenuLabel>
+              <div className="space-y-1">
+                {[
+                  { title: "Absence déclarée", desc: "M. Dupont a déclaré une absence.", time: "Il y a 2h", type: "warning" },
+                  { title: "Rattrapage validé", desc: "Votre proposition a été acceptée.", time: "Il y a 5h", type: "success" },
+                  { title: "Nouveau message", desc: "L'administration vous a envoyé un message.", time: "Hier", type: "info" }
+                ].map((notif, i) => (
+                  <DropdownMenuItem key={i} className="rounded-lg cursor-pointer p-3 flex flex-col items-start gap-1 hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-bold text-sm text-slate-900">{notif.title}</span>
+                      <span className="text-[10px] text-slate-400">{notif.time}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 line-clamp-1">{notif.desc}</p>
+                  </DropdownMenuItem>
+                ))}
+              </div>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator className="my-2" />
+            <DropdownMenuItem className="justify-center text-primary font-bold text-xs py-2 cursor-pointer hover:bg-primary/5 rounded-lg">
+              Tout marquer comme lu
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger 
@@ -65,16 +101,18 @@ export default function TopBar() {
           />
           <DropdownMenuContent align="end" className="w-56 rounded-xl p-2 shadow-xl border-slate-100">
             <DropdownMenuGroup>
-              <DropdownMenuLabel className="font-bold px-3 py-2">Mon Compte</DropdownMenuLabel>
+              <DropdownMenuLabel className="font-bold px-3 py-2 text-slate-500">Mon Compte</DropdownMenuLabel>
               <DropdownMenuSeparator className="my-1" />
-              <DropdownMenuItem className="rounded-lg cursor-pointer px-3 py-2 text-sm">
-                <User size={16} className="mr-2" /> Profil
-              </DropdownMenuItem>
+              <Link href="/dashboard/profile">
+                <DropdownMenuItem className="rounded-lg cursor-pointer px-3 py-2 text-sm group">
+                  <User size={16} className="mr-2 text-slate-400 group-hover:text-primary transition-colors" /> Profil
+                </DropdownMenuItem>
+              </Link>
               <DropdownMenuItem 
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="rounded-lg cursor-pointer px-3 py-2 text-sm text-red-500 focus:text-red-600 focus:bg-red-50"
+                className="rounded-lg cursor-pointer px-3 py-2 text-sm text-red-500 focus:text-red-600 focus:bg-red-50 group"
               >
-                <LogOut size={16} className="mr-2" /> Déconnexion
+                <LogOut size={16} className="mr-2 group-hover:scale-110 transition-transform" /> Déconnexion
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>

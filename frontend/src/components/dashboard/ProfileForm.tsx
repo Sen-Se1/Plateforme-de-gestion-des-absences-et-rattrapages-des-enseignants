@@ -175,8 +175,11 @@ export default function ProfileForm() {
             />
 
             <div className="pt-4 border-t border-slate-100">
-              <h3 className="text-sm font-bold text-slate-900 mb-4">Changer le mot de passe</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="mb-4">
+                <h3 className="text-sm font-bold text-slate-900">Changer le mot de passe</h3>
+                <p className="text-xs text-slate-500 mt-1">Laissez vide si vous ne souhaitez pas modifier votre mot de passe.</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                 <FormField
                   control={form.control}
                   name="mot_de_passe"
@@ -186,7 +189,6 @@ export default function ProfileForm() {
                       <FormControl>
                         <Input type="password" placeholder="••••••••" {...field} />
                       </FormControl>
-                      <FormDescription>Laissez vide pour ne pas changer</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

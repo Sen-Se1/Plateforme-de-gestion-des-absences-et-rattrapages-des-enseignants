@@ -56,11 +56,8 @@ export default function Sidebar() {
       {/* Brand Header */}
       <div className="p-6 border-b border-slate-800 flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="bg-primary p-1.5 rounded-lg text-white">
-            <GraduationCap size={20} />
-          </div>
           <span className="font-poppins font-bold text-xl tracking-tight">
-            Absence<span className="text-primary-light">Flow</span>
+            Lo<span className="text-primary-light">Go</span>
           </span>
         </Link>
       </div>

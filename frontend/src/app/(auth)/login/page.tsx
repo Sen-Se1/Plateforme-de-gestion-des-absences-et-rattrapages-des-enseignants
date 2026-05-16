@@ -21,11 +21,8 @@ export default function LoginPage() {
 
       <Container className="relative z-10 flex flex-col items-center">
         <Link href="/" className="flex items-center gap-2 mb-8 group">
-          <div className="bg-primary p-2 rounded-xl text-white group-hover:scale-110 transition-transform shadow-lg">
-            <GraduationCap size={32} />
-          </div>
           <span className="font-poppins font-bold text-3xl text-primary tracking-tight">
-            Absence<span className="text-slate-primary">Flow</span>
+            Lo<span className="text-slate-primary">Go</span>
           </span>
         </Link>
         

@@ -14,11 +14,8 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-6">
             <Link href="/" className="flex items-center gap-2 group w-fit">
-              <div className="bg-primary p-1.5 rounded-lg text-white group-hover:bg-primary-light transition-colors">
-                <GraduationCap size={24} />
-              </div>
               <span className="font-poppins font-bold text-xl text-white tracking-tight">
-                Absence<span className="text-primary-light">Flow</span>
+                Lo<span className="text-primary-light">Go</span>
               </span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed">
