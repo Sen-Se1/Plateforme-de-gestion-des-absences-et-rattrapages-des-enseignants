@@ -11,7 +11,9 @@ import {
   MapPin,
   Clock3
 } from "lucide-react";
-import { fetchWithAuth } from "@/lib/api";
+import { getTeacherStats } from "@/lib/api/dashboard";
+import { getUpcomingRattrapages } from "@/lib/api/rattrapages";
+import { Rattrapage } from "@/types/rattrapage";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ErrorMessage } from "@/components/ui/error-message";
@@ -20,7 +22,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { TeacherStats, Rattrapage } from "@/types/dashboard";
+import { TeacherStats } from "@/types/dashboard";
 
 export default function TeacherDashboard() {
   const [stats, setStats] = useState<TeacherStats | null>(null);
@@ -33,8 +35,8 @@ export default function TeacherDashboard() {
     setError(null);
     try {
       const [statsData, upcomingData] = await Promise.all([
-        fetchWithAuth("/dashboard/enseignant/stats"),
-        fetchWithAuth("/rattrapages/a-venir?per_page=5")
+        getTeacherStats(),
+        getUpcomingRattrapages(5)
       ]);
       setStats(statsData);
       setUpcoming(upcomingData.items || []);

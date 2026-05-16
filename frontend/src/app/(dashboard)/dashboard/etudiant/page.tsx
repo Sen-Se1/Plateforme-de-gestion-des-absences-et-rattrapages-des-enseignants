@@ -13,7 +13,7 @@ import {
   Search,
   Table as TableIcon
 } from "lucide-react";
-import { fetchWithAuth } from "@/lib/api";
+import { getStudentStats } from "@/lib/api/dashboard";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ErrorMessage } from "@/components/ui/error-message";
@@ -33,7 +33,7 @@ export default function StudentDashboard() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchWithAuth("/dashboard/etudiant/stats");
+      const data = await getStudentStats();
       setStats(data);
     } catch (err: any) {
       setError(err.message || "Erreur lors de la récupération des données");

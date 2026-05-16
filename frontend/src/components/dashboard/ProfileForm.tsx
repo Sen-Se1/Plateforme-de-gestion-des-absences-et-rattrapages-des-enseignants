@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { fetchWithAuth } from "@/lib/api";
+import { updateProfile } from "@/lib/api/auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 
@@ -77,10 +77,7 @@ export default function ProfileForm() {
         updateData.mot_de_passe = values.mot_de_passe;
       }
 
-      const updatedUser = await fetchWithAuth("/auth/me", {
-        method: "PUT",
-        body: JSON.stringify(updateData),
-      });
+      const updatedUser = await updateProfile(updateData);
 
       await update({
         ...session,
