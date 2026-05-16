@@ -41,9 +41,11 @@ const Header = () => {
                 {item.name}
               </Link>
             ))}
-            <Button variant="default">
-              Se connecter
-            </Button>
+            <Link href="/login">
+              <Button variant="default">
+                Se connecter
+              </Button>
+            </Link>
           </nav>
 
           {/* Mobile menu button */}
@@ -74,9 +76,11 @@ const Header = () => {
               </Link>
             ))}
             <div className="pt-2 border-t border-slate-100">
-              <Button variant="default" className="w-full">
-                Se connecter
-              </Button>
+              <Link href="/login">
+                <Button variant="default" className="w-full">
+                  Se connecter
+                </Button>
+              </Link>
             </div>
           </nav>
         </div>

@@ -37,9 +37,11 @@ export default function HomePage() {
                 La plateforme intelligente pour les établissements d'enseignement qui simplifie la gestion administrative, améliore la communication et optimise les emplois du temps.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="gap-2">
-                  Commencer maintenant <ArrowRight size={20} />
-                </Button>
+                <Link href="/login">
+                  <Button size="lg" className="gap-2">
+                    Commencer maintenant <ArrowRight size={20} />
+                  </Button>
+                </Link>
                 <Link href="/features">
                   <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-white">
                     Découvrir les fonctionnalités

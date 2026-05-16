@@ -4,6 +4,8 @@ import "../styles/globals.css";
 import Header from "@/components/ui/Header";
 import Footer from "@/components/ui/Footer";
 import { cn } from "@/lib/utils";
+import SessionProvider from "@/components/providers/SessionProvider";
+import ConditionalLayout from "@/components/layout/ConditionalLayout";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -31,9 +33,11 @@ export default function RootLayout({
   return (
     <html lang="fr" className={cn(inter.variable, poppins.variable, "font-sans", geist.variable)}>
       <body className="min-h-screen flex flex-col bg-neutral-background text-slate-primary">
-        <Header />
-        <main className="flex-grow">{children}</main>
-        <Footer />
+        <SessionProvider>
+          <ConditionalLayout>
+            {children}
+          </ConditionalLayout>
+        </SessionProvider>
       </body>
     </html>
   );
