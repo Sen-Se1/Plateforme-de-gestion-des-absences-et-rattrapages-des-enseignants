@@ -4,8 +4,9 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.utilisateur import Utilisateur
 from app.schemas.auth import LoginRequest, LoginResponse
-from app.schemas.utilisateur import UtilisateurResponse
+from app.schemas.utilisateur import UtilisateurResponse, ProfileUpdate
 from app.services.auth_service import AuthService
+from app.services.utilisateur_service import UtilisateurService
 
 router = APIRouter()
 
@@ -26,3 +27,17 @@ async def login(
 @router.get("/me", response_model=UtilisateurResponse)
 async def get_me(current_user: Utilisateur = Depends(get_current_user)):
     return current_user
+
+@router.put("/me", response_model=UtilisateurResponse)
+async def update_me(
+    profile_data: ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: Utilisateur = Depends(get_current_user)
+):
+    # Check if email is being changed and if it's already taken
+    if profile_data.email and profile_data.email != current_user.email:
+        existing = UtilisateurService.get_by_email(db, profile_data.email)
+        if existing:
+            raise HTTPException(status_code=400, detail="Email déjà utilisé")
+            
+    return UtilisateurService.update(db, current_user.id, profile_data)

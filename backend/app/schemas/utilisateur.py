@@ -21,6 +21,12 @@ class UtilisateurUpdate(BaseModel):
     role: Optional[RoleUtilisateur] = None
     actif: Optional[bool] = None
 
+class ProfileUpdate(BaseModel):
+    nom: Optional[str] = Field(None, max_length=100)
+    prenom: Optional[str] = Field(None, max_length=100)
+    email: Optional[EmailStr] = Field(None, max_length=150)
+    mot_de_passe: Optional[str] = Field(None, min_length=6, max_length=255)
+
 class UtilisateurSimple(UtilisateurBase):
     id: int
     model_config = ConfigDict(from_attributes=True)
