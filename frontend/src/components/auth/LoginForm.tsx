@@ -60,14 +60,14 @@ export default function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md border-none shadow-2xl bg-white/80 backdrop-blur-md">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">Connexion</CardTitle>
-        <CardDescription className="text-center">
+    <Card className="w-full max-w-[550px] border-none shadow-2xl bg-white/95 backdrop-blur-md p-4">
+      <CardHeader className="space-y-2 pb-6">
+        <CardTitle className="text-3xl font-bold text-center">Connexion</CardTitle>
+        <CardDescription className="text-center text-base">
           Entrez vos identifiants pour accéder à votre espace
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-8 pb-8">
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
@@ -75,7 +75,7 @@ export default function LoginForm() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -83,7 +83,7 @@ export default function LoginForm() {
               type="email"
               placeholder="votre@email.com"
               {...form.register("email")}
-              className={form.formState.errors.email ? "border-destructive" : ""}
+              className={form.formState.errors.email ? "h-12 border-destructive" : "h-12"}
               disabled={isLoading}
             />
             {form.formState.errors.email && (
@@ -102,7 +102,7 @@ export default function LoginForm() {
                 id="mot_de_passe"
                 type={showPassword ? "text" : "password"}
                 {...form.register("mot_de_passe")}
-                className={form.formState.errors.mot_de_passe ? "border-destructive pr-10" : "pr-10"}
+                className={form.formState.errors.mot_de_passe ? "h-12 border-destructive pr-10" : "h-12 pr-10"}
                 disabled={isLoading}
               />
               <button
@@ -118,10 +118,10 @@ export default function LoginForm() {
               <p className="text-xs text-destructive font-medium">{form.formState.errors.mot_de_passe.message}</p>
             )}
           </div>
-          <Button type="submit" className="w-full h-11 text-base font-bold" disabled={isLoading}>
+          <Button type="submit" className="w-full h-12 text-lg font-bold mt-2" disabled={isLoading}>
             {isLoading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Connexion en cours...
               </>
             ) : (
@@ -130,8 +130,8 @@ export default function LoginForm() {
           </Button>
         </form>
       </CardContent>
-      <CardFooter className="flex flex-col space-y-4 border-t pt-6 bg-slate-50/50 rounded-b-xl">
-        <p className="text-xs text-center text-slate-500">
+      <CardFooter className="flex flex-col space-y-4 border-t pt-8 bg-slate-50/50 rounded-b-xl">
+        <p className="text-sm text-center text-slate-500">
           En vous connectant, vous acceptez nos conditions d'utilisation.
         </p>
       </CardFooter>

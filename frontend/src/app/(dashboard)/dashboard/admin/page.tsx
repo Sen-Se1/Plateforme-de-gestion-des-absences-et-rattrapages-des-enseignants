@@ -1,82 +1,215 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
   Users, 
   FileWarning, 
   CalendarCheck2, 
   GraduationCap,
-  ShieldCheck
+  ShieldCheck,
+  Building2,
+  BookOpen,
+  RefreshCw,
+  Clock
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { fetchWithAuth } from "@/lib/api";
+import { StatCard } from "@/components/dashboard/StatCard";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ErrorMessage } from "@/components/ui/error-message";
+import { Button } from "@/components/ui/button";
+
+interface AdminStats {
+  users: {
+    total_enseignants: number;
+    total_etudiants: number;
+    total_administrations: number;
+    total_users: number;
+  };
+  absences: {
+    total_absences: number;
+    absences_en_attente: number;
+    absences_validees: number;
+    absences_rejetees: number;
+    absences_par_mois: Array<{ month: string, count: number }>;
+  };
+  rattrapages: {
+    total_rattrapages: number;
+    rattrapages_proposes: number;
+    rattrapages_valides: number;
+    rattrapages_annules: number;
+    rattrapages_par_mois: Array<{ month: string, count: number }>;
+  };
+  salles_et_cours: {
+    total_salles: number;
+    total_matieres: number;
+    total_groupes: number;
+    total_cours_par_semaine: number;
+  };
+}
 
 export default function AdminDashboard() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const user = session?.user;
-  const role = (user as any)?.role;
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadStats = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchWithAuth("/dashboard/admin/stats");
+      setStats(data);
+    } catch (err: any) {
+      setError(err.message || "Erreur lors de la récupération des statistiques");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (status === "authenticated" && role !== "admin_systeme" && role !== "administration") {
-      // Redirect if not admin
-      if (role === "enseignant") router.push("/dashboard/enseignant");
-      else if (role === "etudiant") router.push("/dashboard/etudiant");
-      else router.push("/dashboard");
-    }
-  }, [status, role, router]);
+    loadStats();
+  }, [loadStats]);
 
-  if (status === "loading") return <div>Chargement...</div>;
-  if (!user || (role !== "admin_systeme" && role !== "administration")) return null;
+  if (loading) return <LoadingSpinner className="min-h-[60vh]" />;
+  if (error) return <ErrorMessage message={error} onRetry={loadStats} />;
+  if (!stats) return null;
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-primary/10 text-primary rounded-lg">
-          <ShieldCheck size={24} />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Tableau de Bord Administrateur</h1>
-          <p className="text-slate-500 mt-1">Supervision globale de l'établissement.</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { title: "Enseignants", value: "85", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-          { title: "Étudiants", value: "1,240", icon: GraduationCap, color: "text-purple-600", bg: "bg-purple-50" },
-          { title: "Absences en attente", value: "14", icon: FileWarning, color: "text-amber-600", bg: "bg-amber-50" },
-          { title: "Rattrapages ce mois", value: "42", icon: CalendarCheck2, color: "text-green-600", bg: "bg-green-50" },
-        ].map((stat, i) => (
-          <Card key={i} className="border-none shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-500">{stat.title}</p>
-                  <p className="text-3xl font-bold mt-2">{stat.value}</p>
-                </div>
-                <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
-                  <stat.icon size={28} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="border-none shadow-sm">
-        <CardHeader>
-          <CardTitle>Dernières demandes de validation</CardTitle>
-          <CardDescription>Actions requises pour les absences et rattrapages.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12 text-slate-400">
-            <FileWarning size={48} className="mx-auto mb-4 opacity-20" />
-            <p>Aucune demande urgente en attente.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 text-primary rounded-lg">
+            <ShieldCheck size={24} />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Tableau de Bord Administrateur</h1>
+            <p className="text-slate-500 mt-1">Supervision globale de l'établissement.</p>
+          </div>
+        </div>
+        <Button onClick={loadStats} variant="outline" size="sm" className="gap-2">
+          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          Actualiser
+        </Button>
+      </div>
+
+      {/* Users Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          title="Total Utilisateurs" 
+          value={stats.users?.total_users || 0} 
+          icon={Users} 
+          description={`${stats.users?.total_enseignants || 0} enseignants, ${stats.users?.total_etudiants || 0} étudiants`}
+          color="text-blue-600" 
+          bg="bg-blue-50" 
+        />
+        <StatCard 
+          title="Enseignants" 
+          value={stats.users?.total_enseignants || 0} 
+          icon={Users} 
+          color="text-indigo-600" 
+          bg="bg-indigo-50" 
+        />
+        <StatCard 
+          title="Étudiants" 
+          value={stats.users?.total_etudiants || 0} 
+          icon={GraduationCap} 
+          color="text-purple-600" 
+          bg="bg-purple-50" 
+        />
+        <StatCard 
+          title="Staff Admin" 
+          value={stats.users?.total_administrations || 0} 
+          icon={ShieldCheck} 
+          color="text-slate-600" 
+          bg="bg-slate-50" 
+        />
+      </div>
+
+      {/* Absences & Rattrapages */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <FileWarning size={20} className="text-amber-500" />
+            Statistiques des Absences
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <StatCard 
+              title="Absences en attente" 
+              value={stats.absences?.absences_en_attente || 0} 
+              icon={FileWarning} 
+              color="text-amber-600" 
+              bg="bg-amber-50" 
+            />
+            <StatCard 
+              title="Validées" 
+              value={stats.absences?.absences_validees || 0} 
+              icon={CalendarCheck2} 
+              color="text-green-600" 
+              bg="bg-green-50" 
+            />
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <RefreshCw size={20} className="text-primary" />
+            Statistiques des Rattrapages
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <StatCard 
+              title="Proposés" 
+              value={stats.rattrapages?.rattrapages_proposes || 0} 
+              icon={BookOpen} 
+              color="text-primary" 
+              bg="bg-primary/5" 
+            />
+            <StatCard 
+              title="Confirmés" 
+              value={stats.rattrapages?.rattrapages_valides || 0} 
+              icon={CalendarCheck2} 
+              color="text-green-600" 
+              bg="bg-green-50" 
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Infrastructure */}
+      <div className="space-y-6">
+        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+          <Building2 size={20} className="text-slate-500" />
+          Infrastructure & Emploi du Temps
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard 
+            title="Salles de cours" 
+            value={stats.salles_et_cours?.total_salles || 0} 
+            icon={Building2} 
+            color="text-slate-700" 
+            bg="bg-slate-100" 
+          />
+          <StatCard 
+            title="Matières" 
+            value={stats.salles_et_cours?.total_matieres || 0} 
+            icon={BookOpen} 
+            color="text-blue-700" 
+            bg="bg-blue-100" 
+          />
+          <StatCard 
+            title="Groupes" 
+            value={stats.salles_et_cours?.total_groupes || 0} 
+            icon={Users} 
+            color="text-indigo-700" 
+            bg="bg-indigo-100" 
+          />
+          <StatCard 
+            title="Cours / Semaine" 
+            value={stats.salles_et_cours?.total_cours_par_semaine || 0} 
+            icon={Clock} 
+            color="text-purple-700" 
+            bg="bg-purple-100" 
+          />
+        </div>
+      </div>
     </div>
   );
 }
