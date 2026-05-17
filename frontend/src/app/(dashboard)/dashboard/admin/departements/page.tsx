@@ -62,13 +62,11 @@ export default function DepartementsPage() {
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Dialogs state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedDept, setSelectedDept] = useState<DepartementResponse | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Authorization check
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -191,7 +189,7 @@ export default function DepartementsPage() {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setPage(1); // Reset to first page on search
+                setPage(1);
               }}
             />
           </div>
