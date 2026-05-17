@@ -93,9 +93,9 @@
 > Most endpoints restricted to `admin_systeme` only. The `administration` role can list students.
 
 ### `GET /users/`
-**Description:** Returns a paginated, filterable list of all platform users. Supports filtering by role (e.g., list all teachers), active status (e.g., only deactivated accounts), and a full-text search across `nom`, `prenom`, and `email`. Useful for the admin user management panel. The `administration` role is restricted to listing students only (`role=etudiant`).
+**Description:** Returns a paginated, filterable list of all platform users. Supports filtering by role (e.g., list all teachers), active status (e.g., only deactivated accounts), and a full-text search across `nom`, `prenom`, and `email`. Useful for the admin user management panel. The `administration` role is restricted to listing students and teachers only (must pass `role=etudiant` or `role=enseignant`).
 
-**Access:** `admin_systeme` (full access), `administration` (students only — must pass `role=etudiant`).
+**Access:** `admin_systeme` (full access), `administration` (must pass `role=etudiant` or `role=enseignant`).
 
 **Query Parameters:**
 
@@ -108,7 +108,7 @@
 | `search` | string | No | Case-insensitive search across nom, prenom, email |
 
 **Response 200:** `PaginatedResponse[UtilisateurResponse]`
-**Error 403:** `administration` role attempting to list non-student users.
+**Error 403:** `administration` role attempting to list users other than students or teachers.
 
 ---
 
@@ -382,9 +382,9 @@
 ## 5. Subjects / Matières (`/api/v1/matieres`)
 
 ### `GET /matieres/`
-**Description:** Lists all subjects across all departments. Teachers can see their assigned subjects here. Supports search by subject name.
+**Description:** Lists all subjects across all departments. Supports search by subject name.
 
-**Access:** `admin_systeme`, `administration`, `enseignant`.
+**Access:** `admin_systeme`, `administration`.
 
 **Query Params:** `page`, `per_page`, `search`
 
@@ -413,11 +413,12 @@
 ---
 
 ### `GET /matieres/{matiere_id}`
-**Description:** Retrieves full details of a subject including its department and assigned teacher.
+**Description:** Retrieves full details of a subject including its department and assigned teacher. If the user is a teacher (`enseignant`), they can only access the subject if they are the assigned teacher for it.
 
-**Access:** `admin_systeme`, `administration`, `enseignant`.
+**Access:** `admin_systeme`, `administration`, `enseignant` (own subject only).
 
 **Response 200:** `MatiereResponse`  
+**Error 403:** Teacher attempting to access a subject assigned to another teacher.  
 **Error 404:** Subject not found.
 
 ---

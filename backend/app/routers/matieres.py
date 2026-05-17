@@ -19,7 +19,7 @@ def get_matieres(
     db: Session = Depends(get_db),
     current_user: Utilisateur = Depends(get_current_active_user)
 ):
-    if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION, RoleUtilisateur.ENSEIGNANT]:
+    if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Pas assez d'autorisations")
     
     items, total = MatiereService.get_paginated(db, page, per_page, search)
@@ -45,6 +45,10 @@ def get_matiere(
     matiere = MatiereService.get_by_id(db, matiere_id)
     if not matiere:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Matière non trouvée")
+        
+    if current_user.role == RoleUtilisateur.ENSEIGNANT and matiere.enseignant_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Accès refusé à cette matière")
+        
     return matiere
 
 @router.post("/", response_model=MatiereResponse, status_code=status.HTTP_201_CREATED)

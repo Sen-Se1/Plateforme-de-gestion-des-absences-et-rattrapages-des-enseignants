@@ -28,10 +28,10 @@ def get_users(
     if current_user.role == RoleUtilisateur.ADMIN_SYSTEME:
         pass
     elif current_user.role == RoleUtilisateur.ADMINISTRATION:
-        if role != RoleUtilisateur.ETUDIANT:
+        if role not in [RoleUtilisateur.ETUDIANT, RoleUtilisateur.ENSEIGNANT]:
             raise HTTPException(
                 status_code=403, 
-                detail="L'administration n'est autorisée qu'à lister les étudiants."
+                detail="L'administration n'est autorisée qu'à lister les étudiants et les enseignants."
             )
     else:
         raise HTTPException(status_code=403, detail="Pas assez d'autorisations")
