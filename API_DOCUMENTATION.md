@@ -462,7 +462,7 @@
 ### `GET /salles/`
 **Description:** Lists all classrooms/lecture halls available on the platform. Supports search by room name. Admins use this to manage rooms; teachers may browse it to see options when proposing a rattrapage.
 
-**Access:** `admin_systeme`, `administration`, `enseignant`.
+**Access:** All authenticated roles.
 
 **Query Params:** `page`, `per_page`, `search`
 
@@ -493,7 +493,7 @@
 ### `GET /salles/{salle_id}`
 **Description:** Returns details of a single room by ID including its name and capacity.
 
-**Access:** `admin_systeme`, `administration`, `enseignant`.
+**Access:** All authenticated roles.
 
 **Response 200:** `SalleResponse`  
 **Error 404:** Room not found.
