@@ -43,7 +43,8 @@ import {
   getMatieres, 
   createMatiere, 
   updateMatiere, 
-  deleteMatiere 
+  deleteMatiere,
+  getMatieresByEnseignant
 } from "@/lib/api/matieres";
 import { getDepartements } from "@/lib/api/departements";
 import { getUsers } from "@/lib/api/users";
@@ -51,6 +52,13 @@ import { MatiereResponse } from "@/types/matiere";
 import { DepartementResponse } from "@/types/departement";
 import { UtilisateurResponse } from "@/types/user";
 import { MatiereForm } from "@/components/admin/MatiereForm";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function MatieresAdminPage() {
   const { data: session, status } = useSession();
@@ -64,9 +72,10 @@ export default function MatieresAdminPage() {
   
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [perPage] = useState(10);
+  const [perPage, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
+  const [selectedTeacherFilter, setSelectedTeacherFilter] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -104,16 +113,31 @@ export default function MatieresAdminPage() {
   const fetchMatieres = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await getMatieres(page, perPage, search);
-      setMatieres(res.items);
-      setTotal(res.total);
-      setTotalPages(res.total_pages);
+      if (selectedTeacherFilter === "all") {
+        const res = await getMatieres(page, perPage, search);
+        setMatieres(res.items);
+        setTotal(res.total);
+        setTotalPages(res.total_pages);
+      } else {
+        const res = await getMatieresByEnseignant(parseInt(selectedTeacherFilter), page, perPage);
+        if (search) {
+          const searchLower = search.toLowerCase();
+          const filtered = res.items.filter(item => item.nom.toLowerCase().includes(searchLower));
+          setMatieres(filtered);
+          setTotal(filtered.length);
+          setTotalPages(1);
+        } else {
+          setMatieres(res.items);
+          setTotal(res.total);
+          setTotalPages(res.total_pages);
+        }
+      }
     } catch (error: any) {
       toast.error(error.message || "Erreur lors du chargement des matières");
     } finally {
       setIsLoading(false);
     }
-  }, [page, perPage, search]);
+  }, [page, perPage, search, selectedTeacherFilter]);
 
   useEffect(() => {
     if (status === "authenticated" && ["admin_systeme", "administration"].includes(role)) {
@@ -123,7 +147,7 @@ export default function MatieresAdminPage() {
 
       return () => clearTimeout(delayDebounceFn);
     }
-  }, [fetchMatieres, search, status, role]);
+  }, [fetchMatieres, search, selectedTeacherFilter, status, role]);
 
   if (status === "loading" || !["admin_systeme", "administration"].includes(role)) {
     return (
@@ -209,9 +233,9 @@ export default function MatieresAdminPage() {
 
       {/* Main Container */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-6">
-        {/* Search */}
-        <div className="flex items-center justify-between">
-          <div className="relative w-full max-w-sm">
+        {/* Search and Filters */}
+        <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between w-full">
+          <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Rechercher par nom..."
@@ -222,6 +246,37 @@ export default function MatieresAdminPage() {
                 setPage(1);
               }}
             />
+          </div>
+          <div className="w-full sm:w-[250px]">
+            <Select
+              value={selectedTeacherFilter}
+              onValueChange={(val) => {
+                if (val) {
+                  setSelectedTeacherFilter(val);
+                }
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="bg-slate-50/50 border-slate-200">
+                <SelectValue placeholder="Filtrer par enseignant">
+                  {selectedTeacherFilter === "all"
+                    ? "Tous les enseignants"
+                    : (() => {
+                        const t = teachers.find(teacher => teacher.id.toString() === selectedTeacherFilter);
+                        return t ? `${t.nom} ${t.prenom}` : "Filtrer par enseignant";
+                      })()
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les enseignants</SelectItem>
+                {teachers.map((teacher) => (
+                  <SelectItem key={teacher.id} value={teacher.id.toString()}>
+                    {teacher.nom} {teacher.prenom}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
