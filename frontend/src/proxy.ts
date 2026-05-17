@@ -1,8 +1,8 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-export default withAuth(
-  function middleware(req) {
+const proxyHandler = withAuth(
+  function proxy(req) {
     const token = req.nextauth.token;
     const isPublicPage = req.nextUrl.pathname === "/" || req.nextUrl.pathname.startsWith("/login");
 
@@ -23,6 +23,9 @@ export default withAuth(
     },
   }
 );
+
+export default proxyHandler;
+export { proxyHandler as proxy };
 
 export const config = {
   matcher: [
