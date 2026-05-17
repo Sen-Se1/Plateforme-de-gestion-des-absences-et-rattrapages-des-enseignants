@@ -5,12 +5,21 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_active_user
 from app.models.utilisateur import Utilisateur
 from app.models.enums import RoleUtilisateur
+from app.models.groupe import Groupe
 from app.schemas.groupe import GroupeCreate, GroupeUpdate, GroupeResponse
 from app.schemas.utilisateur import UtilisateurResponse
 from app.schemas.common import PaginatedResponse
 from app.services.groupe_service import GroupeService
 
 router = APIRouter()
+
+def check_enseignant_owns_group(db: Session, teacher_id: int, groupe_id: int) -> bool:
+    from app.models.emploi_du_temps import EmploiDuTemps
+    from app.models.matiere import Matiere
+    return db.query(EmploiDuTemps).join(Matiere).filter(
+        EmploiDuTemps.groupe_id == groupe_id,
+        Matiere.enseignant_id == teacher_id
+    ).count() > 0
 
 @router.get("/", response_model=PaginatedResponse[GroupeResponse])
 def get_groupes(
@@ -23,7 +32,19 @@ def get_groupes(
     if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION, RoleUtilisateur.ENSEIGNANT]:
         raise HTTPException(status_code=403, detail="Pas assez d'autorisations")
     
-    items, total = GroupeService.get_paginated(db, page, per_page, search)
+    if current_user.role == RoleUtilisateur.ENSEIGNANT:
+        from app.models.emploi_du_temps import EmploiDuTemps
+        from app.models.matiere import Matiere
+        query = db.query(Groupe).join(EmploiDuTemps).join(Matiere).filter(Matiere.enseignant_id == current_user.id)
+        if search:
+            query = query.filter(Groupe.nom.ilike(f"%{search}%"))
+        
+        total = query.distinct().count()
+        offset = (page - 1) * per_page
+        items = query.distinct().offset(offset).limit(per_page).all()
+    else:
+        items, total = GroupeService.get_paginated(db, page, per_page, search)
+        
     total_pages = (total + per_page - 1) // per_page
     
     return {
@@ -43,6 +64,10 @@ def get_groupe(
     if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION, RoleUtilisateur.ENSEIGNANT]:
         raise HTTPException(status_code=403, detail="Pas assez d'autorisations")
     
+    if current_user.role == RoleUtilisateur.ENSEIGNANT:
+        if not check_enseignant_owns_group(db, current_user.id, groupe_id):
+            raise HTTPException(status_code=403, detail="Vous n'êtes pas enseignant de ce groupe")
+            
     groupe = GroupeService.get_by_id(db, groupe_id)
     if not groupe:
         raise HTTPException(status_code=404, detail="Groupe non trouvé")
@@ -107,7 +132,7 @@ def get_groupes_by_departement(
     db: Session = Depends(get_db),
     current_user: Utilisateur = Depends(get_current_active_user)
 ):
-    if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION, RoleUtilisateur.ENSEIGNANT]:
+    if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
         raise HTTPException(status_code=403, detail="Pas assez d'autorisations")
         
     if not GroupeService.check_department_exists(db, departement_id):
@@ -186,6 +211,10 @@ def get_group_students(
     if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION, RoleUtilisateur.ENSEIGNANT]:
         raise HTTPException(status_code=403, detail="Pas assez d'autorisations")
         
+    if current_user.role == RoleUtilisateur.ENSEIGNANT:
+        if not check_enseignant_owns_group(db, current_user.id, groupe_id):
+            raise HTTPException(status_code=403, detail="Vous n'êtes pas enseignant de ce groupe")
+            
     groupe = GroupeService.get_by_id(db, groupe_id)
     if not groupe:
         raise HTTPException(status_code=404, detail="Groupe non trouvé")

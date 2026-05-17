@@ -29,7 +29,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const user = session?.user;
   const role = (user as any)?.role;
 
-  // Auto-close mobile sidebar when screen resizes to desktop width
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024 && isOpen && onClose) {
@@ -54,9 +53,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   ];
 
   const teacherNavigation = [
+    { name: "Groupes", href: "/dashboard/enseignant/groupes", icon: Users },
     { name: "Mes Absences", href: "/dashboard/absences", icon: FileWarning },
     { name: "Mes Rattrapages", href: "/dashboard/rattrapages", icon: Calendar },
-    { name: "Groupes", href: "/dashboard/admin/groupes", icon: Users },
   ];
 
   const studentNavigation = [

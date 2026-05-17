@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { 
   Plus, 
@@ -64,6 +64,7 @@ import { GroupStudentsDrawer } from "@/components/admin/GroupStudentsDrawer";
 export default function GroupesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const user = session?.user as any;
   const role = user?.role;
 
@@ -86,10 +87,29 @@ export default function GroupesPage() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
-    } else if (status === "authenticated" && !["admin_systeme", "administration", "enseignant"].includes(role)) {
-      router.push("/dashboard");
+      return;
     }
-  }, [status, role, router]);
+
+    if (status === "authenticated") {
+      if (pathname.startsWith("/dashboard/admin") && !["admin_systeme", "administration"].includes(role)) {
+        if (role === "enseignant") {
+          router.push("/dashboard/enseignant/groupes");
+        } else if (role === "etudiant") {
+          router.push("/dashboard/etudiant");
+        } else {
+          router.push("/dashboard");
+        }
+      } else if (pathname.startsWith("/dashboard/enseignant") && role !== "enseignant") {
+        if (["admin_systeme", "administration"].includes(role)) {
+          router.push("/dashboard/admin/groupes");
+        } else if (role === "etudiant") {
+          router.push("/dashboard/etudiant");
+        } else {
+          router.push("/dashboard");
+        }
+      }
+    }
+  }, [status, role, router, pathname]);
 
   const fetchGroupes = useCallback(async () => {
     try {
@@ -120,7 +140,7 @@ export default function GroupesPage() {
   }, []);
 
   useEffect(() => {
-    if (status === "authenticated" && ["admin_systeme", "administration", "enseignant"].includes(role)) {
+    if (status === "authenticated" && ["admin_systeme", "administration"].includes(role)) {
       fetchDepartments();
     }
   }, [status, role, fetchDepartments]);
@@ -135,7 +155,13 @@ export default function GroupesPage() {
     }
   }, [fetchGroupes, search, selectedDeptFilter, status, role]);
 
-  if (status === "loading" || !["admin_systeme", "administration", "enseignant"].includes(role)) {
+  const isAuthorized = 
+    status === "authenticated" && (
+      (pathname.startsWith("/dashboard/admin") && ["admin_systeme", "administration"].includes(role)) ||
+      (pathname.startsWith("/dashboard/enseignant") && role === "enseignant")
+    );
+
+  if (status === "loading" || !isAuthorized) {
     return (
       <div className="flex h-full items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -240,27 +266,29 @@ export default function GroupesPage() {
             />
           </div>
 
-          <div className="w-full sm:w-64">
-            <Select
-              value={selectedDeptFilter}
-              onValueChange={(val) => {
-                setSelectedDeptFilter(val || "all");
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-full bg-slate-50/50 border-slate-200">
-                <SelectValue placeholder="Filtrer par département" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les départements</SelectItem>
-                {departments.map((dept) => (
-                  <SelectItem key={dept.id} value={dept.id.toString()}>
-                    {dept.nom}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!isTeacher && (
+            <div className="w-full sm:w-64">
+              <Select
+                value={selectedDeptFilter}
+                onValueChange={(val) => {
+                  setSelectedDeptFilter(val || "all");
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-full bg-slate-50/50 border-slate-200">
+                  <SelectValue placeholder="Filtrer par département" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les départements</SelectItem>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id.toString()}>
+                      {dept.nom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <div className="rounded-md border border-slate-200 overflow-hidden">
@@ -305,20 +333,15 @@ export default function GroupesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        {canManage && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleOpenDrawer(groupe)}
-                            className="text-xs border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold"
-                          >
-                            <Users className="h-3.5 w-3.5 mr-1" />
-                            Étudiants
-                          </Button>
-                        )}
-                        {!canManage && (
-                          <span className="text-slate-400 text-xs italic">Lecture seule</span>
-                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenDrawer(groupe)}
+                          className="text-xs border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold"
+                        >
+                          <Users className="h-3.5 w-3.5 mr-1" />
+                          Étudiants
+                        </Button>
                         {canManage && (
                           <Button
                             variant="ghost"
