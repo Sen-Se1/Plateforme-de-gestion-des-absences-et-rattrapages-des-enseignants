@@ -54,6 +54,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   ];
 
   const teacherNavigation = [
+    { name: "Emploi du temps", href: "/dashboard/enseignant/emplois-du-temps", icon: Calendar },
     { name: "Groupes", href: "/dashboard/enseignant/groupes", icon: Users },
     { name: "Matières", href: "/dashboard/enseignant/matieres", icon: BookOpen },
     { name: "Salles", href: "/dashboard/enseignant/salles", icon: Building2 },
@@ -62,7 +63,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   ];
 
   const studentNavigation = [
-    { name: "Emploi du temps", href: "/dashboard/schedule", icon: Calendar },
+    { name: "Emploi du temps", href: "/dashboard/etudiant/emplois-du-temps", icon: Calendar },
     { name: "Salles", href: "/dashboard/etudiant/salles", icon: Building2 },
     { name: "Rattrapages prévus", href: "/dashboard/rattrapages", icon: Clock },
   ];
@@ -73,6 +74,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: "Matières", href: "/dashboard/admin/matieres", icon: BookOpen },
     { name: "Groupes", href: "/dashboard/admin/groupes", icon: Users },
     { name: "Salles", href: "/dashboard/admin/salles", icon: Building2 },
+    { name: "Emplois du temps", href: "/dashboard/admin/emplois-du-temps", icon: Calendar },
   ];
 
   const renderContent = () => (
