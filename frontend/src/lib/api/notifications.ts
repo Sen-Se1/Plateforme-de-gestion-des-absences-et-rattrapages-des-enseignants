@@ -14,27 +14,27 @@ export async function getNotifications(
     size: perPage.toString(),
   });
 
-  return fetchWithAuth(`${endpoint}?${queryParams}`);
+  return fetchWithAuth<PaginatedResponse<NotificationResponse>>(`${endpoint}?${queryParams}`);
 }
 
 export async function getNotificationById(id: number): Promise<NotificationResponse> {
-  return fetchWithAuth(`${BASE_URL}/${id}`);
+  return fetchWithAuth<NotificationResponse>(`${BASE_URL}/${id}`);
 }
 
 export async function markAsRead(id: number): Promise<void> {
-  return fetchWithAuth(`${BASE_URL}/${id}/lire`, {
+  return fetchWithAuth<void>(`${BASE_URL}/${id}/lire`, {
     method: "PUT",
   });
 }
 
 export async function markAllAsRead(): Promise<void> {
-  return fetchWithAuth(`${BASE_URL}/tout-lire`, {
+  return fetchWithAuth<void>(`${BASE_URL}/tout-lire`, {
     method: "PUT",
   });
 }
 
 export async function deleteNotification(id: number): Promise<void> {
-  return fetchWithAuth(`${BASE_URL}/${id}`, {
+  return fetchWithAuth<void>(`${BASE_URL}/${id}`, {
     method: "DELETE",
   });
 }

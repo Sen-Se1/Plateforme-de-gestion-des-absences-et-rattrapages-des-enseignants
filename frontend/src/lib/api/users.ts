@@ -30,41 +30,41 @@ export async function getUsers(
     params.append("search", filters.search);
   }
 
-  return fetchWithAuth(`${BASE_URL}/?${params.toString()}`);
+  return fetchWithAuth<PaginatedUserResponse>(`${BASE_URL}/?${params.toString()}`);
 }
 
 export async function createUser(data: CreateUserPayload): Promise<UtilisateurResponse> {
-  return fetchWithAuth(`${BASE_URL}/`, {
+  return fetchWithAuth<UtilisateurResponse>(`${BASE_URL}/`, {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export async function getUserById(id: number): Promise<UtilisateurResponse> {
-  return fetchWithAuth(`${BASE_URL}/${id}`);
+  return fetchWithAuth<UtilisateurResponse>(`${BASE_URL}/${id}`);
 }
 
 export async function updateUser(id: number, data: UpdateUserPayload): Promise<UtilisateurResponse> {
-  return fetchWithAuth(`${BASE_URL}/${id}`, {
+  return fetchWithAuth<UtilisateurResponse>(`${BASE_URL}/${id}`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 }
 
 export async function deleteUser(id: number): Promise<void> {
-  return fetchWithAuth(`${BASE_URL}/${id}`, {
+  return fetchWithAuth<void>(`${BASE_URL}/${id}`, {
     method: "DELETE",
   });
 }
 
 export async function activateUser(id: number): Promise<UtilisateurResponse> {
-  return fetchWithAuth(`${BASE_URL}/${id}/activer`, {
+  return fetchWithAuth<UtilisateurResponse>(`${BASE_URL}/${id}/activer`, {
     method: "PUT",
   });
 }
 
 export async function deactivateUser(id: number): Promise<UtilisateurResponse> {
-  return fetchWithAuth(`${BASE_URL}/${id}/desactiver`, {
+  return fetchWithAuth<UtilisateurResponse>(`${BASE_URL}/${id}/desactiver`, {
     method: "PUT",
   });
 }

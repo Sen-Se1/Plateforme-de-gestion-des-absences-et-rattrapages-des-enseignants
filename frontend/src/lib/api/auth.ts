@@ -1,14 +1,11 @@
 import { fetchWithAuth } from "../api";
+import { UtilisateurResponse } from "@/types/user";
+import { UpdateProfileRequest } from "@/types/auth";
 
-export interface UpdateProfileRequest {
-  nom: string;
-  prenom: string;
-  email: string;
-  mot_de_passe?: string;
-}
+const BASE_URL = "/auth";
 
-export async function updateProfile(data: UpdateProfileRequest): Promise<any> {
-  return fetchWithAuth("/auth/me", {
+export async function updateProfile(data: UpdateProfileRequest): Promise<UtilisateurResponse> {
+  return fetchWithAuth<UtilisateurResponse>(`${BASE_URL}/me`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
