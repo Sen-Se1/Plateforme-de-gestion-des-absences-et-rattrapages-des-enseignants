@@ -56,6 +56,16 @@ export function GroupeForm({ initialData, departments, onSubmit, onCancel, isLoa
     }
   };
 
+  const getSelectedDeptName = () => {
+    if (!selectedDeptId) return "";
+    const dept = departments.find(d => d.id.toString() === selectedDeptId);
+    if (dept) return dept.nom;
+    if (initialData?.departement && initialData.departement.id.toString() === selectedDeptId) {
+      return initialData.departement.nom;
+    }
+    return "";
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
@@ -80,7 +90,9 @@ export function GroupeForm({ initialData, departments, onSubmit, onCancel, isLoa
           disabled={isLoading}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Sélectionner un département" />
+            <SelectValue placeholder="Sélectionner un département">
+              {getSelectedDeptName() || undefined}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {departments.map((dept) => (

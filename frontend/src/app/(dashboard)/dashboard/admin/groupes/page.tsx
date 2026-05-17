@@ -40,11 +40,20 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { 
   getGroupes, 
   createGroupe, 
   updateGroupe, 
-  deleteGroupe 
+  deleteGroupe,
+  getGroupesByDepartement
 } from "@/lib/api/groupes";
 import { getDepartements } from "@/lib/api/departements";
 import { GroupeResponse } from "@/types/groupe";
@@ -65,6 +74,7 @@ export default function GroupesPage() {
   const [perPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
+  const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -84,7 +94,12 @@ export default function GroupesPage() {
   const fetchGroupes = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await getGroupes(page, perPage, search);
+      let res;
+      if (selectedDeptFilter && selectedDeptFilter !== "all") {
+        res = await getGroupesByDepartement(parseInt(selectedDeptFilter), page, perPage);
+      } else {
+        res = await getGroupes(page, perPage, search);
+      }
       setGroupes(res.items);
       setTotal(res.total);
       setTotalPages(res.total_pages);
@@ -93,7 +108,7 @@ export default function GroupesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, perPage, search]);
+  }, [page, perPage, search, selectedDeptFilter]);
 
   const fetchDepartments = useCallback(async () => {
     try {
@@ -106,19 +121,19 @@ export default function GroupesPage() {
 
   useEffect(() => {
     if (status === "authenticated" && ["admin_systeme", "administration", "enseignant"].includes(role)) {
+      fetchDepartments();
+    }
+  }, [status, role, fetchDepartments]);
+
+  useEffect(() => {
+    if (status === "authenticated" && ["admin_systeme", "administration", "enseignant"].includes(role)) {
       const delayDebounceFn = setTimeout(() => {
         fetchGroupes();
       }, 500);
 
       return () => clearTimeout(delayDebounceFn);
     }
-  }, [fetchGroupes, search, status, role]);
-
-  useEffect(() => {
-    if (status === "authenticated" && ["admin_systeme", "administration"].includes(role)) {
-      fetchDepartments();
-    }
-  }, [status, role, fetchDepartments]);
+  }, [fetchGroupes, search, selectedDeptFilter, status, role]);
 
   if (status === "loading" || !["admin_systeme", "administration", "enseignant"].includes(role)) {
     return (
@@ -134,11 +149,13 @@ export default function GroupesPage() {
 
   const handleOpenCreate = () => {
     setSelectedGroupe(null);
+    fetchDepartments();
     setIsFormOpen(true);
   };
 
   const handleOpenEdit = (groupe: GroupeResponse) => {
     setSelectedGroupe(groupe);
+    fetchDepartments();
     setIsFormOpen(true);
   };
 
@@ -208,18 +225,41 @@ export default function GroupesPage() {
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Rechercher par nom..."
+              placeholder={selectedDeptFilter === "all" ? "Rechercher par nom..." : "Recherche désactivée en mode filtre"}
               className="pl-9 bg-slate-50/50 border-slate-200"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
+              disabled={selectedDeptFilter !== "all"}
             />
+          </div>
+
+          <div className="w-full sm:w-64">
+            <Select
+              value={selectedDeptFilter}
+              onValueChange={(val) => {
+                setSelectedDeptFilter(val || "all");
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-full bg-slate-50/50 border-slate-200">
+                <SelectValue placeholder="Filtrer par département" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les départements</SelectItem>
+                {departments.map((dept) => (
+                  <SelectItem key={dept.id} value={dept.id.toString()}>
+                    {dept.nom}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
