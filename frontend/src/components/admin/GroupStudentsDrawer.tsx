@@ -138,7 +138,25 @@ export function GroupStudentsDrawer({ isOpen, onClose, group, userRole }: GroupS
       setIsSelectorOpen(false);
       fetchCurrentStudents();
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de l'ajout des étudiants");
+      const detail = error.response?.detail;
+      if (typeof detail === "object" && detail !== null && detail.message) {
+        const conflictStudentIds = detail.students || [];
+        const conflictNames = conflictStudentIds
+          .map((id: number) => {
+            const student = allStudents.find(s => s.id === id);
+            return student ? `${student.prenom} ${student.nom}` : `ID: ${id}`;
+          })
+          .filter(Boolean)
+          .join(", ");
+        
+        const message = conflictNames 
+          ? `${detail.message} (Étudiant(s) concerné(s) : ${conflictNames})`
+          : detail.message;
+        
+        toast.error(message, { duration: 6000 });
+      } else {
+        toast.error(error.message || "Erreur lors de l'ajout des étudiants");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -167,7 +185,7 @@ export function GroupStudentsDrawer({ isOpen, onClose, group, userRole }: GroupS
             )}
           </SheetHeader>
 
-          <div className="py-6 space-y-6">
+          <div className="py-6 px-5 space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="font-bold text-slate-700">Liste des étudiants ({total})</h3>
               {canManage && (

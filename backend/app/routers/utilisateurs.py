@@ -25,7 +25,17 @@ def get_users(
     db: Session = Depends(get_db),
     current_user: Utilisateur = Depends(get_current_active_user)
 ):
-    check_admin_permission(current_user)
+    if current_user.role == RoleUtilisateur.ADMIN_SYSTEME:
+        pass
+    elif current_user.role == RoleUtilisateur.ADMINISTRATION:
+        if role != RoleUtilisateur.ETUDIANT:
+            raise HTTPException(
+                status_code=403, 
+                detail="L'administration n'est autorisée qu'à lister les étudiants."
+            )
+    else:
+        raise HTTPException(status_code=403, detail="Pas assez d'autorisations")
+
     items, total = UtilisateurService.get_paginated(db, page=page, per_page=per_page, role=role, actif=actif, search=search)
     total_pages = (total + per_page - 1) // per_page
     return {

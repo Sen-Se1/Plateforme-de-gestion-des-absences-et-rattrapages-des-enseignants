@@ -26,7 +26,13 @@ export async function fetchWithAuth<T = any>(endpoint: string, options: RequestI
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || errorData.message || "Une erreur est survenue");
+    const errorMessage = typeof errorData.detail === "object" && errorData.detail !== null
+      ? errorData.detail.message
+      : (errorData.detail || errorData.message || "Une erreur est survenue");
+    
+    const error = new Error(errorMessage);
+    (error as any).response = errorData;
+    throw error;
   }
 
   if (response.status === 204) {
