@@ -46,6 +46,7 @@ export default function Sidebar() {
 
   const adminNavItems = [
     ...(role === "admin_systeme" ? [{ name: "Gestion Utilisateurs", href: "/dashboard/admin/users", icon: Users }] : []),
+    { name: "Départements", href: "/dashboard/admin/departements", icon: GraduationCap },
     { name: "Départements & Groupes", href: "/dashboard/admin/structure", icon: GraduationCap },
     { name: "Toutes les Absences", href: "/dashboard/admin/absences", icon: FileWarning },
   ];

@@ -2,7 +2,7 @@ import { getSession, signOut } from "next-auth/react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
+export async function fetchWithAuth<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const session = await getSession();
   const token = (session as any)?.accessToken;
 
@@ -30,7 +30,7 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
   }
 
   if (response.status === 204) {
-    return null;
+    return null as T;
   }
 
   return response.json();
