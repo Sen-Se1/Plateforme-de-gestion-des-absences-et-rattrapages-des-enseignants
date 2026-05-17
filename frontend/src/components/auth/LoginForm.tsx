@@ -6,13 +6,13 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Veuillez entrer une adresse email valide" }),
@@ -23,7 +23,6 @@ type LoginValues = z.infer<typeof loginSchema>;
 
 export default function LoginForm() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -37,7 +36,6 @@ export default function LoginForm() {
 
   const onSubmit = async (values: LoginValues) => {
     setIsLoading(true);
-    setError(null);
 
     try {
       const result = await signIn("credentials", {
@@ -47,13 +45,14 @@ export default function LoginForm() {
       });
 
       if (result?.error) {
-        setError("Identifiants invalides ou problème de connexion.");
+        toast.error("Identifiants invalides ou problème de connexion.");
       } else {
+        toast.success("Connexion réussie ! Redirection...");
         router.push("/dashboard");
         router.refresh();
       }
     } catch (err) {
-      setError("Une erreur inattendue est survenue.");
+      toast.error("Une erreur inattendue est survenue.");
     } finally {
       setIsLoading(false);
     }
@@ -68,13 +67,6 @@ export default function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="px-8 pb-8">
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Erreur</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>

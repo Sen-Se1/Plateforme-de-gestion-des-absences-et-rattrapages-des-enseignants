@@ -5,13 +5,13 @@ import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { updateProfile } from "@/lib/api/auth";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 
 const profileSchema = z.object({
@@ -35,8 +35,6 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export default function ProfileForm() {
   const { data: session, update } = useSession();
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -63,8 +61,6 @@ export default function ProfileForm() {
 
   async function onSubmit(values: ProfileFormValues) {
     setLoading(true);
-    setSuccess(false);
-    setError(null);
 
     try {
       const updateData: any = {
@@ -89,11 +85,11 @@ export default function ProfileForm() {
         },
       });
 
-      setSuccess(true);
+      toast.success("Votre profil a été mis à jour avec succès.");
       form.setValue("mot_de_passe", "");
       form.setValue("confirm_mot_de_passe", "");
     } catch (err: any) {
-      setError(err.message || "Une erreur est survenue lors de la mise à jour");
+      toast.error(err.message || "Une erreur est survenue lors de la mise à jour");
     } finally {
       setLoading(false);
     }
@@ -108,22 +104,6 @@ export default function ProfileForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {success && (
-          <Alert className="mb-6 bg-green-50 border-green-200 text-green-800">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertTitle>Succès</AlertTitle>
-            <AlertDescription>Votre profil a été mis à jour avec succès.</AlertDescription>
-          </Alert>
-        )}
-
-        {error && (
-          <Alert className="mb-6 bg-red-50 border-red-200 text-red-800">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertTitle>Erreur</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
