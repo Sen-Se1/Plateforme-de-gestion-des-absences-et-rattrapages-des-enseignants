@@ -1,4 +1,4 @@
-﻿# API Documentation — Gestion des Absences et Rattrapages des Enseignants
+# API Documentation — Gestion des Absences et Rattrapages des Enseignants
 
 **Base URL:** `http://127.0.0.1:8000/api/v1`  
 **Version:** 1.0.0  
@@ -90,12 +90,12 @@
 
 ## 2. Users (`/api/v1/users`)
 
-> All endpoints restricted to `admin_systeme` only.
+> Most endpoints restricted to `admin_systeme` only. The `administration` role can list students.
 
 ### `GET /users/`
-**Description:** Returns a paginated, filterable list of all platform users. Supports filtering by role (e.g., list all teachers), active status (e.g., only deactivated accounts), and a full-text search across `nom`, `prenom`, and `email`. Useful for the admin user management panel.
+**Description:** Returns a paginated, filterable list of all platform users. Supports filtering by role (e.g., list all teachers), active status (e.g., only deactivated accounts), and a full-text search across `nom`, `prenom`, and `email`. Useful for the admin user management panel. The `administration` role is restricted to listing students only (`role=etudiant`).
 
-**Access:** `admin_systeme` only.
+**Access:** `admin_systeme` (full access), `administration` (students only — must pass `role=etudiant`).
 
 **Query Parameters:**
 
@@ -108,6 +108,7 @@
 | `search` | string | No | Case-insensitive search across nom, prenom, email |
 
 **Response 200:** `PaginatedResponse[UtilisateurResponse]`
+**Error 403:** `administration` role attempting to list non-student users.
 
 ---
 
@@ -258,9 +259,9 @@
 ## 4. Groups (`/api/v1/groupes`)
 
 ### `GET /groupes/`
-**Description:** Lists all student groups across all departments. Teachers can see this list to know which groups exist. Supports search by group name and pagination.
+**Description:** Lists student groups. Admins and administration see all groups. Teachers see only groups they teach (determined by their assigned subjects in the timetable). Supports search by group name and pagination.
 
-**Access:** `admin_systeme`, `administration`, `enseignant`.
+**Access:** `admin_systeme`, `administration` (all groups), `enseignant` (own groups only).
 
 **Query Params:** `page`, `per_page`, `search`
 
@@ -287,11 +288,12 @@
 ---
 
 ### `GET /groupes/{groupe_id}`
-**Description:** Returns full details of a single group including its department and the list of students currently enrolled in it.
+**Description:** Returns full details of a single group including its department and the list of students currently enrolled in it. Teachers can only access groups they teach.
 
-**Access:** `admin_systeme`, `administration`, `enseignant`.
+**Access:** `admin_systeme`, `administration` (any group), `enseignant` (own groups only).
 
 **Response 200:** `GroupeResponse`  
+**Error 403:** Teacher is not assigned to teach this group.  
 **Error 404:** Group not found.
 
 ---
@@ -322,11 +324,12 @@
 ### `GET /groupes/departement/{departement_id}`
 **Description:** Lists all groups belonging to a specific department. Useful for filtering groups when building timetables or assigning students.
 
-**Access:** `admin_systeme`, `administration`, `enseignant`.
+**Access:** `admin_systeme`, `administration`.
 
 **Query Params:** `page`, `per_page`
 
 **Response 200:** `PaginatedResponse[GroupeResponse]`  
+**Error 403:** Insufficient permissions.  
 **Error 404:** Department not found.
 
 ---
@@ -364,13 +367,14 @@
 ---
 
 ### `GET /groupes/{groupe_id}/etudiants`
-**Description:** Returns a paginated list of all students enrolled in a specific group. Useful for admin panels showing group membership.
+**Description:** Returns a paginated list of all students enrolled in a specific group. Useful for admin panels showing group membership. Teachers can only view students of groups they teach.
 
-**Access:** `admin_systeme`, `administration`, `enseignant`.
+**Access:** `admin_systeme`, `administration` (any group), `enseignant` (own groups only).
 
 **Query Params:** `page`, `per_page`
 
 **Response 200:** `PaginatedResponse[UtilisateurResponse]`  
+**Error 403:** Teacher is not assigned to teach this group.  
 **Error 404:** Group not found.
 
 ---
@@ -949,30 +953,35 @@
 ```json
 {
   "users": {
-    "total": 14,
-    "enseignants": 2,
-    "etudiants": 10,
-    "administration": 1,
-    "admin_systeme": 1
+    "total_users": 14,
+    "total_enseignants": 2,
+    "total_etudiants": 10,
+    "total_administrations": 2
   },
   "absences": {
-    "total": 8,
-    "en_attente": 3,
-    "validees": 4,
-    "rejetees": 1
+    "total_absences": 8,
+    "absences_en_attente": 3,
+    "absences_validees": 4,
+    "absences_rejetees": 1,
+    "absences_par_mois": [{"month": "2026-04", "count": 3}, {"month": "2026-05", "count": 5}]
   },
   "rattrapages": {
-    "total": 4,
-    "proposes": 1,
-    "valides": 2,
-    "annules": 1
+    "total_rattrapages": 4,
+    "rattrapages_proposes": 1,
+    "rattrapages_valides": 2,
+    "rattrapages_annules": 1,
+    "rattrapages_par_mois": [{"month": "2026-05", "count": 4}]
   },
   "salles_et_cours": {
     "total_salles": 6,
-    "total_cours": 18
+    "total_matieres": 8,
+    "total_groupes": 5,
+    "total_cours_par_semaine": 18
   }
 }
 ```
+
+> **Note:** `absences_par_mois` and `rattrapages_par_mois` return stats for the last 6 months. `users` counts only active users.
 
 ---
 
@@ -985,22 +994,27 @@
 ```json
 {
   "absences": {
-    "total": 3,
-    "en_attente": 1,
-    "validees": 2,
-    "rejetees": 0
+    "total_absences": 3,
+    "absences_en_attente": 1,
+    "absences_validees": 2,
+    "absences_rejetees": 0,
+    "absences_par_mois": [{"month": "2026-05", "count": 3}]
   },
   "rattrapages": {
-    "total": 2,
-    "proposes": 1,
-    "valides": 1,
-    "annules": 0
+    "total_rattrapages": 2,
+    "rattrapages_proposes": 1,
+    "rattrapages_valides": 1,
+    "rattrapages_annules": 0,
+    "rattrapages_par_mois": [{"month": "2026-05", "count": 2}]
   },
   "cours": {
-    "total": 4
+    "total_cours_par_semaine": 4,
+    "groupes_enseignes": ["Groupe A", "L2 Info S3"]
   }
 }
 ```
+
+> **Note:** `absences_par_mois` and `rattrapages_par_mois` are arrays of `{"month": "YYYY-MM", "count": N}`. `groupes_enseignes` lists group names the teacher is assigned to.
 
 ---
 
@@ -1012,13 +1026,27 @@
 **Response 200:** `StudentStatsResponse`
 ```json
 {
-  "cours": { "total": 6 },
-  "absences_enseignants": { "total": 2 },
-  "rattrapages": { "total": 1, "valides": 1 },
+  "cours": {
+    "total_cours_par_semaine": 6,
+    "matieres_suivies": ["Algorithmique", "Base de Données"],
+    "groupes_appartenance": ["Groupe A"]
+  },
+  "absences_enseignants": {
+    "total": 2,
+    "en_attente": 0,
+    "validees": 2
+  },
+  "rattrapages": {
+    "total": 1,
+    "proposes": 0,
+    "valides": 1,
+    "a_venir": 1
+  },
   "list_rattrapages_a_venir": [
     {
+      "id": 5,
+      "date": "2026-06-15",
       "matiere": "Algorithmique",
-      "date_proposee": "2026-06-15",
       "heure_debut": "14:00",
       "heure_fin": "16:00",
       "salle": "Salle B202"
@@ -1026,6 +1054,8 @@
   ]
 }
 ```
+
+> **Note:** `matieres_suivies` lists subject names from the student's timetable. `groupes_appartenance` lists group names the student belongs to. `rattrapages.a_venir` counts upcoming validated rattrapages. `list_rattrapages_a_venir` items include an `id` field and use `date` instead of `date_proposee`.
 
 ---
 
@@ -1165,6 +1195,61 @@
 | `heure_fin` | time | HH:MM |
 | `statut` | StatutRattrapage | `propose`/`valide`/`annule` |
 | `valide_par` | int | Admin user ID, nullable |
+| `validateur` | UtilisateurSimple | Admin who validated, nullable |
+| `created_at` | datetime | |
+| `updated_at` | datetime | |
+
+### EmploiDuTempsResponse
+| Field | Type | Notes |
+|---|---|---|
+| `id` | int | |
+| `groupe_id` | int | |
+| `matiere_id` | int | |
+| `salle_id` | int | |
+| `jour_semaine` | int | 0=Lundi … 6=Dimanche |
+| `heure_debut` | time | HH:MM |
+| `heure_fin` | time | HH:MM |
+| `rattrapage_id` | int | Nullable — set if this is a rattrapage slot |
+| `created_at` | datetime | |
+| `updated_at` | datetime | |
+
+### DepartementResponse
+| Field | Type | Notes |
+|---|---|---|
+| `id` | int | |
+| `nom` | string | Max 100 characters |
+| `created_at` | datetime | |
+| `updated_at` | datetime | |
+
+### GroupeResponse
+| Field | Type | Notes |
+|---|---|---|
+| `id` | int | |
+| `nom` | string | Max 100 characters |
+| `departement_id` | int | |
+| `departement` | DepartementSimple | Nullable |
+| `etudiants` | List[UtilisateurSimple] | Nullable — enrolled students |
+| `created_at` | datetime | |
+| `updated_at` | datetime | |
+
+### MatiereResponse
+| Field | Type | Notes |
+|---|---|---|
+| `id` | int | |
+| `nom` | string | Max 100 characters |
+| `departement_id` | int | |
+| `enseignant_id` | int | Nullable |
+| `departement` | DepartementSimple | Nullable |
+| `enseignant` | UtilisateurSimple | Nullable |
+| `created_at` | datetime | |
+| `updated_at` | datetime | |
+
+### SalleResponse
+| Field | Type | Notes |
+|---|---|---|
+| `id` | int | |
+| `nom` | string | Max 50 characters |
+| `capacite` | int | Positive integer |
 | `created_at` | datetime | |
 | `updated_at` | datetime | |
 
