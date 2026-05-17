@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -10,18 +11,36 @@ import {
   Users, 
   GraduationCap,
   LogOut,
-  Clock
+  Clock,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "next-auth/react";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user;
   const role = (user as any)?.role;
 
-  // Determine the primary dashboard link based on role
+  // Auto-close mobile sidebar when screen resizes to desktop width
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024 && isOpen && onClose) {
+        onClose();
+      }
+    };
+    
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isOpen, onClose]);
+
   const getDashboardHref = () => {
     if (role === "admin_systeme" || role === "administration") return "/dashboard/admin";
     if (role === "enseignant") return "/dashboard/enseignant";
@@ -37,6 +56,7 @@ export default function Sidebar() {
   const teacherNavigation = [
     { name: "Mes Absences", href: "/dashboard/absences", icon: FileWarning },
     { name: "Mes Rattrapages", href: "/dashboard/rattrapages", icon: Calendar },
+    { name: "Groupes", href: "/dashboard/admin/groupes", icon: Users },
   ];
 
   const studentNavigation = [
@@ -47,12 +67,13 @@ export default function Sidebar() {
   const adminNavItems = [
     ...(role === "admin_systeme" ? [{ name: "Gestion Utilisateurs", href: "/dashboard/admin/users", icon: Users }] : []),
     { name: "Départements", href: "/dashboard/admin/departements", icon: GraduationCap },
+    { name: "Groupes", href: "/dashboard/admin/groupes", icon: Users },
     { name: "Départements & Groupes", href: "/dashboard/admin/structure", icon: GraduationCap },
     { name: "Toutes les Absences", href: "/dashboard/admin/absences", icon: FileWarning },
   ];
 
-  return (
-    <aside className="hidden lg:flex w-72 flex-col bg-slate-900 text-white h-screen sticky top-0 border-r border-slate-800">
+  const renderContent = () => (
+    <>
       {/* Brand Header */}
       <div className="p-6 border-b border-slate-800 flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center gap-2">
@@ -76,6 +97,7 @@ export default function Sidebar() {
                 <Link
                   key={item.name}
                   href={item.href}
+                  onClick={onClose}
                   className={cn(
                     "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
                     isActive 
@@ -104,6 +126,7 @@ export default function Sidebar() {
                   <Link
                     key={item.name}
                     href={item.href}
+                    onClick={onClose}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
                       isActive ? "bg-primary text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"
@@ -130,6 +153,7 @@ export default function Sidebar() {
                   <Link
                     key={item.name}
                     href={item.href}
+                    onClick={onClose}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
                       isActive ? "bg-primary text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"
@@ -157,6 +181,7 @@ export default function Sidebar() {
                   <Link
                     key={item.name}
                     href={item.href}
+                    onClick={onClose}
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
                       isActive ? "bg-primary text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"
@@ -182,6 +207,22 @@ export default function Sidebar() {
           <span className="font-medium">Déconnexion</span>
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex w-72 flex-col bg-slate-900 text-white h-screen sticky top-0 border-r border-slate-800">
+        {renderContent()}
+      </aside>
+
+      {/* Mobile Sidebar overlay */}
+      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose && onClose()}>
+        <SheetContent side="left" className="p-0 w-72 bg-slate-900 border-r border-slate-800 text-white flex flex-col">
+          {renderContent()}
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

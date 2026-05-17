@@ -17,7 +17,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 import { NotificationBell } from "./NotificationBell";
 
-export default function TopBar() {
+interface TopBarProps {
+  onMenuClick?: () => void;
+}
+
+export default function TopBar({ onMenuClick }: TopBarProps) {
   const { data: session } = useSession();
   const user = session?.user;
 
@@ -25,7 +29,7 @@ export default function TopBar() {
     <header className="h-20 border-b border-slate-200 bg-white sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between">
       {/* Search / Context */}
       <div className="flex items-center gap-4 flex-1">
-        <Button variant="ghost" size="icon" className="lg:hidden">
+        <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenuClick}>
           <Menu size={20} />
         </Button>
         <div className="relative hidden md:block w-96">
