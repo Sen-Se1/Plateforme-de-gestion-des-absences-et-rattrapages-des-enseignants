@@ -12,7 +12,7 @@ import {
   GraduationCap,
   LogOut,
   Clock,
-  X
+  BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession, signOut } from "next-auth/react";
@@ -54,6 +54,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const teacherNavigation = [
     { name: "Groupes", href: "/dashboard/enseignant/groupes", icon: Users },
+    { name: "Matières", href: "/dashboard/enseignant/matieres", icon: BookOpen },
     { name: "Mes Absences", href: "/dashboard/absences", icon: FileWarning },
     { name: "Mes Rattrapages", href: "/dashboard/rattrapages", icon: Calendar },
   ];
@@ -66,9 +67,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const adminNavItems = [
     ...(role === "admin_systeme" ? [{ name: "Gestion Utilisateurs", href: "/dashboard/admin/users", icon: Users }] : []),
     { name: "Départements", href: "/dashboard/admin/departements", icon: GraduationCap },
+    { name: "Matières", href: "/dashboard/admin/matieres", icon: BookOpen },
     { name: "Groupes", href: "/dashboard/admin/groupes", icon: Users },
-    { name: "Départements & Groupes", href: "/dashboard/admin/structure", icon: GraduationCap },
-    { name: "Toutes les Absences", href: "/dashboard/admin/absences", icon: FileWarning },
   ];
 
   const renderContent = () => (
