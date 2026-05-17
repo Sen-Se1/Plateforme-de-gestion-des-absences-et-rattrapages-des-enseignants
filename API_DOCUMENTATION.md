@@ -471,7 +471,7 @@
 ---
 
 ### `GET /salles/disponibles`
-**Description:** Checks which rooms are available (not booked) for a given date and time slot. The system checks both the weekly recurring timetable (`EmploiDuTemps`) and already-scheduled rattrapages to determine availability. Teachers use this before proposing a rattrapage to find a free room.
+**Description:** Checks which rooms are available (not booked) for a given date and time slot. The system checks both the weekly recurring timetable (`EmploiDuTemps`) and already-scheduled rattrapages to determine availability. All authenticated users (teachers, students, and admins) use this to search for free rooms.
 
 **Access:** All authenticated roles.
 
@@ -530,12 +530,12 @@
 ---
 
 ### `DELETE /salles/{salle_id}`
-**Description:** Deletes a room. Will be blocked if the room has any upcoming rattrapage sessions scheduled (to prevent orphaned bookings). Past bookings are not considered.
+**Description:** Deletes a room. Will be blocked if the room has any active recurring weekly classes (`EmploiDuTemps`) or upcoming scheduled makeup (`Rattrapage`) sessions (to prevent orphaned bookings).
 
 **Access:** `admin_systeme` only.
 
 **Response 204:** No content.  
-**Error 400:** Room has future rattrapage sessions — cannot delete.  
+**Error 400:** Room has active recurring schedules or future makeup sessions — cannot delete.  
 **Error 404:** Room not found.
 
 ---

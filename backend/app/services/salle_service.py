@@ -58,9 +58,12 @@ class SalleService:
 
     @staticmethod
     def check_availability(db: Session, target_date: date, start_time: time, end_time: time, page: int, per_page: int) -> Tuple[List[Salle], int]:
+        # EmploiDuTemps is weekly recurring. We get day of week (0=Monday, ..., 6=Sunday).
+        day_of_week = target_date.weekday()
+        
         # Subquery to find rooms that are occupied at specified date/time in EmploiDuTemps
         occupied_in_edt = db.query(EmploiDuTemps.salle_id).filter(
-            EmploiDuTemps.date_cours == target_date,
+            EmploiDuTemps.jour_semaine == day_of_week,
             EmploiDuTemps.heure_debut < end_time,
             EmploiDuTemps.heure_fin > start_time
         ).subquery()
@@ -91,16 +94,9 @@ class SalleService:
         today = now.date()
         current_time = now.time()
         
-        # Check EmploiDuTemps
+        # Check EmploiDuTemps (since they are recurring every week indefinitely)
         count_edt = db.query(EmploiDuTemps).filter(
-            EmploiDuTemps.salle_id == salle_id,
-            or_(
-                EmploiDuTemps.date_cours > today,
-                and_(
-                    EmploiDuTemps.date_cours == today,
-                    EmploiDuTemps.heure_fin > current_time
-                )
-            )
+            EmploiDuTemps.salle_id == salle_id
         ).count()
         
         if count_edt > 0:
