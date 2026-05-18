@@ -518,7 +518,20 @@ export function WeeklyTimetable({
             width: 100% !important;
             border: none !important;
             box-shadow: none !important;
-            --row-height: 4.5rem !important;
+            --row-height: 3.8rem !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          #timetable-capture-container > div:first-child {
+            padding: 0.4rem 0.8rem !important;
+          }
+          #timetable-capture-container h3 {
+            font-size: 1.1rem !important;
+            margin: 0 !important;
+          }
+          #timetable-capture-container p {
+            font-size: 0.7rem !important;
+            margin: 0 !important;
           }
           #timetable-capture-container .overflow-x-auto {
             overflow: visible !important;
@@ -526,18 +539,34 @@ export function WeeklyTimetable({
           #timetable-capture-container .h-28 {
             height: var(--row-height) !important;
           }
-          #timetable-capture-container .course-card {
-            padding: 0.4rem !important;
+          #timetable-capture-container .h-14 {
+            height: calc(var(--row-height) * 0.5) !important;
           }
-          #timetable-capture-container .course-card .text-xs {
+          #timetable-capture-container th {
+            padding: 0.3rem !important;
             font-size: 0.65rem !important;
-            line-height: 0.9rem !important;
+          }
+          #timetable-capture-container td {
+            padding: 0.15rem !important;
+          }
+          #timetable-capture-container .course-card {
+            padding: 0.25rem 0.35rem !important;
+            margin-bottom: 0.08rem !important;
+          }
+          #timetable-capture-container .course-card .text-xs,
+          #timetable-capture-container .course-card .text-sm {
+            font-size: 0.58rem !important;
+            line-height: 0.75rem !important;
           }
           #timetable-capture-container .course-card .mt-1\\.5 {
-            margin-top: 0.2rem !important;
+            margin-top: 0.05rem !important;
           }
           #timetable-capture-container .course-card .mt-2\\.5 {
-            margin-top: 0.3rem !important;
+            margin-top: 0.1rem !important;
+          }
+          #timetable-capture-container .course-card span,
+          #timetable-capture-container .course-card div {
+            font-size: 0.58rem !important;
           }
         }
       `}</style>
