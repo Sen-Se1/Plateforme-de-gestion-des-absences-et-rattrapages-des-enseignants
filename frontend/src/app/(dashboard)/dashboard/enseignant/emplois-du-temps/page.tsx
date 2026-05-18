@@ -151,7 +151,7 @@ export default function TeacherTimetablePage() {
               <WeeklyTimetable
                 courses={courses}
                 viewType={activeTab as any}
-                title={activeTab === "personnel" ? "Emploi du temps - Enseignant" : `Emploi du temps - Matière : ${selectedMatiere?.nom}`}
+                title={activeTab === "personnel" ? `Enseignant : ${session?.user?.nom + " " + session?.user?.prenom || ""}` : `Matière : ${selectedMatiere?.nom}`}
                 subtitle={activeTab === "personnel" ? "" : (selectedMatiere?.departement?.nom ? `Département : ${selectedMatiere.departement.nom}` : "")}
               />
             </div>

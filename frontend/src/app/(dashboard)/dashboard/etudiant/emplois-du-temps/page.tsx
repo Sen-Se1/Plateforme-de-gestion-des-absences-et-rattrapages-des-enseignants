@@ -56,8 +56,8 @@ export default function StudentTimetablePage() {
       {/* Timetable Grid Card */}
       <WeeklyTimetable
         courses={courses}
-        title="Planning de Cours - Étudiant"
-        subtitle="Votre emploi du temps hebdomadaire"
+        title={`Groupe : ${courses[0].groupe?.nom || ""}`}
+        subtitle={`Département : ${courses[0].matiere?.departement?.nom || ""}`}
       />
     </div>
   );
