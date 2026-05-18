@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Calendar, AlertTriangle, Printer, UserRound, MapPin, Clock, Pencil, Trash2 } from "lucide-react";
+import { Download, Calendar, AlertTriangle, Printer, UserRound, MapPin, Clock, Pencil, Trash2, Coffee } from "lucide-react";
 import { EmploiDuTempsResponse } from "@/types/emploiDuTemps";
 import {
   DAYS_OF_WEEK,
@@ -155,15 +155,36 @@ export function WeeklyTimetable({
                 </tr>
               </thead>
               <tbody>
-                {DEFAULT_TIME_SLOTS.map((slot, slotIdx) => (
-                  <tr key={slotIdx} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/20 transition-colors">
-                    {/* Time Slot Header */}
-                    <td className="p-3 text-center border-r border-slate-100 font-medium text-slate-600 bg-slate-50/30">
-                      <div className="text-xs font-semibold text-slate-800">{slot.label}</div>
-                      <div className="text-[10px] text-slate-400 mt-1 tracking-tight">
-                        {slot.start} - {slot.end}
-                      </div>
-                    </td>
+                {DEFAULT_TIME_SLOTS.map((slot, slotIdx) => {
+                  const isPause = slot.start === "13:20" && slot.end === "14:30";
+                  if (isPause) {
+                    return (
+                      <tr key={slotIdx} className="bg-slate-50/40 border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50 transition-colors">
+                        {/* Time Slot Header */}
+                        <td className="p-3 text-center border-r border-slate-100 font-medium text-slate-600 bg-slate-50/50">
+                          <div className="text-xs font-bold text-slate-700">{slot.label}</div>
+                          <div className="text-[10px] text-slate-400 mt-1 tracking-tight">
+                            {slot.start} - {slot.end}
+                          </div>
+                        </td>
+                        <td colSpan={displayedDays.length} className="p-4 text-center align-middle bg-slate-50/10 border-slate-100 select-none">
+                          <div className="flex items-center justify-center gap-2 text-xs font-extrabold tracking-widest text-slate-400 uppercase">
+                            <Coffee size={14} className="text-slate-400" />
+                            Pause Déjeuner
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }
+                  return (
+                    <tr key={slotIdx} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/20 transition-colors">
+                      {/* Time Slot Header */}
+                      <td className="p-3 text-center border-r border-slate-100 font-medium text-slate-600 bg-slate-50/30">
+                        <div className="text-xs font-semibold text-slate-800">{slot.label}</div>
+                        <div className="text-[10px] text-slate-400 mt-1 tracking-tight">
+                          {slot.start} - {slot.end}
+                        </div>
+                      </td>
 
                     {/* Day Cells */}
                     {displayedDays.map((dayIdx) => {
@@ -284,7 +305,7 @@ export function WeeklyTimetable({
                       );
                     })}
                   </tr>
-                ))}
+                ); })}
               </tbody>
             </table>
           )}

@@ -12,6 +12,7 @@ export const DEFAULT_TIME_SLOTS: TimeSlot[] = [
   { label: "8h30 à 10h00", start: "08:30", end: "10:00" },
   { label: "10h10 à 11h40", start: "10:10", end: "11:40" },
   { label: "11h50 à 13h20", start: "11:50", end: "13:20" },
+  { label: "Pause déjeuner", start: "13:20", end: "14:30" },
   { label: "14h30 à 16h00", start: "14:30", end: "16:00" },
   { label: "16h10 à 17h40", start: "16:10", end: "17:40" },
 ];
