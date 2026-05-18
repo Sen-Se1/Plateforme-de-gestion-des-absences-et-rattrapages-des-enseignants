@@ -596,13 +596,14 @@
 ---
 
 ### `GET /emplois-du-temps/matiere/{matiere_id}`
-**Description:** Returns all timetable entries for a specific subject. Admins and teachers use this to see when and where a subject is scheduled across different groups.
+**Description:** Returns all timetable entries for a specific subject. Admins and teachers use this to see when and where a subject is scheduled across different groups. If the authenticated user is an `enseignant`, they can only retrieve the timetable if they are the assigned teacher for this subject.
 
 **Access:** `admin_systeme`, `administration`, `enseignant`.
 
 **Query Params:** `page`, `per_page`, `jour_semaine` (optional)
 
 **Response 200:** `PaginatedResponse[EmploiDuTempsResponse]`
+**Error 403:** Teacher attempting to access a subject assigned to another teacher.
 
 ---
 

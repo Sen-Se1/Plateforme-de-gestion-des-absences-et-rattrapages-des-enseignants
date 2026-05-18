@@ -125,6 +125,12 @@ def get_by_matiere(
 ):
     if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION, RoleUtilisateur.ENSEIGNANT]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Pas assez d'autorisations")
+        
+    if current_user.role == RoleUtilisateur.ENSEIGNANT:
+        from app.models.matiere import Matiere
+        matiere = db.query(Matiere).filter(Matiere.id == matiere_id).first()
+        if not matiere or matiere.enseignant_id != current_user.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Vous ne pouvez voir que les emplois du temps de vos propres matières")
     
     items, total = EmploiDuTempsService.get_by_matiere(db, matiere_id, page, per_page, jour_semaine)
     total_pages = (total + per_page - 1) // per_page

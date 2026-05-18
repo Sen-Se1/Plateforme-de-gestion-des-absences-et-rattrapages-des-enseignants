@@ -236,10 +236,10 @@ export default function GroupesPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
             <Users className="h-8 w-8 text-primary" />
-            Gestion des groupes
+            {role === 'enseignant' ? 'Mes groupes' : 'Gestion des groupes'}
           </h1>
           <p className="text-slate-500 mt-1">
-            Gérez les groupes d'étudiants et leur rattachement aux départements.
+            {role === 'enseignant' ? 'Gérez vos groupes d\'étudiants' : 'Gérez les groupes d\'étudiants et leur rattachement aux départements.'}
           </p>
         </div>
         {canManage && (

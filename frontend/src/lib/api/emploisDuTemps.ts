@@ -58,6 +58,20 @@ export async function getTimetableBySalle(
   return fetchWithAuth<PaginatedResponse<EmploiDuTempsResponse>>(`${BASE_URL}/salle/${salleId}?${params}`);
 }
 
+export async function getTimetableByMatiere(
+  matiereId: number,
+  page = 1,
+  perPage = 100,
+  jourSemaine?: number
+): Promise<PaginatedResponse<EmploiDuTempsResponse>> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    per_page: perPage.toString(),
+    ...(jourSemaine !== undefined && { jour_semaine: jourSemaine.toString() }),
+  });
+  return fetchWithAuth<PaginatedResponse<EmploiDuTempsResponse>>(`${BASE_URL}/matiere/${matiereId}?${params}`);
+}
+
 export async function createEmploiDuTemps(data: CreateEmploiDuTempsPayload): Promise<EmploiDuTempsResponse> {
   return fetchWithAuth<EmploiDuTempsResponse>(BASE_URL, {
     method: "POST",
