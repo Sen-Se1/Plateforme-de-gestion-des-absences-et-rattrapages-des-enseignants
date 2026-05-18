@@ -21,6 +21,7 @@ interface WeeklyTimetableProps {
   subtitle?: string;
   showDayFilter?: boolean;
   onDayChange?: (day: number | null) => void;
+  viewType?: "groupe" | "matiere" | "salle" | "personnel";
 }
 
 export function WeeklyTimetable({
@@ -29,6 +30,7 @@ export function WeeklyTimetable({
   subtitle,
   showDayFilter = true,
   onDayChange,
+  viewType = "groupe",
 }: WeeklyTimetableProps) {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
@@ -99,15 +101,29 @@ export function WeeklyTimetable({
 
       {/* Timetable Capture Area */}
       <Card id="timetable-capture-container" className="overflow-hidden border border-slate-200/80 shadow-sm bg-white">
-        <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-              <Calendar size={20} />
-            </div>
-            <div>
-              <CardTitle className="text-lg md:text-xl font-bold text-slate-800">{title}</CardTitle>
-              {subtitle && <CardDescription className="text-slate-500 mt-0.5">{subtitle}</CardDescription>}
-            </div>
+        <CardHeader className="border-b-2 border-slate-800 bg-white pb-6 pt-6 text-center rounded-t-xl print:border-b-2 print:border-black">
+          <div className="flex flex-col items-center justify-center w-full">
+            <h2 className="text-lg md:text-xl font-bold text-slate-900 print:text-black">
+              Institut Supérieur des Études Technologiques de Tozeur
+            </h2>
+            
+            <div className="w-full max-w-3xl h-[2px] bg-slate-800 my-4 print:bg-black"></div>
+            
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight print:text-black">
+              {title}
+            </h1>
+            
+            <div className="w-full max-w-3xl h-[2px] bg-slate-800 my-4 print:bg-black"></div>
+            
+            {subtitle && (
+              <p className="text-base md:text-lg font-bold text-slate-800 mb-1 print:text-black">
+                {subtitle}
+              </p>
+            )}
+            
+            <p className="text-sm font-semibold text-slate-600 print:text-black">
+              Emploi du temps
+            </p>
           </div>
         </CardHeader>
 
@@ -196,7 +212,11 @@ export function WeeklyTimetable({
                                 } mb-1.5 last:mb-0`}
                               >
                                 <div className="font-bold text-slate-800 text-xs md:text-sm leading-snug line-clamp-2">
-                                  {course.matiere?.nom || "Matière inconnue"}
+                                  {viewType === "matiere"
+                                    ? course.groupe?.nom || "Groupe inconnu"
+                                    : viewType === "salle" || viewType === "personnel"
+                                      ? `${course.matiere?.nom || "Matière"} (${course.groupe?.nom || "Groupe"})`
+                                      : course.matiere?.nom || "Matière inconnue"}
                                 </div>
                                 
                                 {!isExactMatch && (

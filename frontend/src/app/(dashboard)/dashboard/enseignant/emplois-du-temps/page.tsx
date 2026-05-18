@@ -150,8 +150,9 @@ export default function TeacherTimetablePage() {
             <div className="p-4 sm:p-6">
               <WeeklyTimetable
                 courses={courses}
-                title={activeTab === "personnel" ? "Planning Global - Enseignant" : `Planning - ${selectedMatiere?.nom}`}
-                subtitle={activeTab === "personnel" ? "Votre grille de cours hebdomadaire complète" : "Vue détaillée filtrée pour cette matière"}
+                viewType={activeTab as any}
+                title={activeTab === "personnel" ? "Emploi du temps - Enseignant" : `Emploi du temps - Matière : ${selectedMatiere?.nom}`}
+                subtitle={activeTab === "personnel" ? "" : (selectedMatiere?.departement?.nom ? `Département : ${selectedMatiere.departement.nom}` : "")}
               />
             </div>
           )}

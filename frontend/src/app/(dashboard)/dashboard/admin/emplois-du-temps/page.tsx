@@ -252,15 +252,16 @@ export default function AdminTimetablePage() {
         ) : (
           <WeeklyTimetable
             courses={courses}
+            viewType={activeTab as any}
             title={
-              activeTab === "groupe" ? `Emploi du temps - ${selectedGroup?.nom || "Groupe"}` : 
-              activeTab === "matiere" ? `Emploi du temps - ${selectedMatiere?.nom || "Matière"}` :
-              `Emploi du temps - ${selectedSalle?.nom || "Salle"}`
+              activeTab === "groupe" ? `Groupe : ${selectedGroup?.nom || "Groupe"}` : 
+              activeTab === "matiere" ? `Matière : ${selectedMatiere?.nom || "Matière"}` :
+              `Salle : ${selectedSalle?.nom || "Salle"}`
             }
             subtitle={
-              activeTab === "groupe" ? (selectedGroup?.departement?.nom ? `Département : ${selectedGroup.departement.nom}` : "Planning hebdomadaire") : 
-              activeTab === "matiere" ? (selectedMatiere?.enseignant ? `Enseignant : ${selectedMatiere.enseignant.prenom} ${selectedMatiere.enseignant.nom}` : "Planning matière") :
-              `Capacité : ${selectedSalle?.capacite} places`
+              activeTab === "groupe" ? (selectedGroup?.departement?.nom ? `Département : ${selectedGroup.departement.nom}` : "") : 
+              activeTab === "matiere" ? (selectedMatiere?.departement?.nom ? `Département : ${selectedMatiere.departement.nom}` : "") :
+              ""
             }
           />
         )
