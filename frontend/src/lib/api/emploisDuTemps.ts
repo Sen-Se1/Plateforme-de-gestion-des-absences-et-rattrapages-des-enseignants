@@ -4,6 +4,21 @@ import { EmploiDuTempsResponse, CreateEmploiDuTempsPayload, UpdateEmploiDuTempsP
 
 const BASE_URL = "/emplois-du-temps";
 
+export interface ConflictDetail {
+  type: "group" | "room" | "teacher" | "error";
+  id: number | null;
+  details: string;
+}
+
+export class ConflictApiError extends Error {
+  conflicts: ConflictDetail[];
+  constructor(message: string, conflicts: ConflictDetail[]) {
+    super(message);
+    this.name = "ConflictApiError";
+    this.conflicts = conflicts;
+  }
+}
+
 export async function getTimetableByGroupe(
   groupeId: number,
   page = 1,
@@ -72,11 +87,24 @@ export async function getTimetableByMatiere(
   return fetchWithAuth<PaginatedResponse<EmploiDuTempsResponse>>(`${BASE_URL}/matiere/${matiereId}?${params}`);
 }
 
+export async function getPlanningConflicts(): Promise<ConflictDetail[]> {
+  return fetchWithAuth<ConflictDetail[]>(`${BASE_URL}/conflits-planning`);
+}
+
 export async function createEmploiDuTemps(data: CreateEmploiDuTempsPayload): Promise<EmploiDuTempsResponse> {
-  return fetchWithAuth<EmploiDuTempsResponse>(BASE_URL, {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  try {
+    return await fetchWithAuth<EmploiDuTempsResponse>(BASE_URL + "/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  } catch (err: any) {
+    // Surface 409 conflict details as a typed ConflictApiError
+    const detail = err?.detail || err?.body?.detail;
+    if (detail?.conflicts) {
+      throw new ConflictApiError(detail.message || "Conflit de planning", detail.conflicts);
+    }
+    throw err;
+  }
 }
 
 export async function updateEmploiDuTemps(id: number, data: UpdateEmploiDuTempsPayload): Promise<EmploiDuTempsResponse> {

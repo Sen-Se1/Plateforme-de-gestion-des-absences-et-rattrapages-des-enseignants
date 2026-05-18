@@ -4,35 +4,58 @@ import React, { useState, useEffect, useCallback } from "react";
 import { getGroupes } from "@/lib/api/groupes";
 import { getMatieres } from "@/lib/api/matieres";
 import { getSalles } from "@/lib/api/salles";
-import { getTimetableByGroupe, getTimetableByMatiere, getTimetableBySalle } from "@/lib/api/emploisDuTemps";
+import {
+  getTimetableByGroupe, getTimetableByMatiere, getTimetableBySalle,
+  createEmploiDuTemps, ConflictApiError, ConflictDetail
+} from "@/lib/api/emploisDuTemps";
 import { GroupeResponse } from "@/types/groupe";
 import { MatiereResponse } from "@/types/matiere";
 import { SalleResponse } from "@/types/salle";
-import { EmploiDuTempsResponse } from "@/types/emploiDuTemps";
+import { EmploiDuTempsResponse, CreateEmploiDuTempsPayload } from "@/types/emploiDuTemps";
 import { WeeklyTimetable } from "@/components/timetable/WeeklyTimetable";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ErrorMessage } from "@/components/ui/error-message";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Users, BookOpen, MapPin, RefreshCw, Info } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Calendar, Users, BookOpen, MapPin, RefreshCw, Info, Plus, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+const CONFLICT_LABELS: Record<string, { label: string; color: string }> = {
+  group:   { label: "Conflit Groupe",     color: "bg-orange-100 text-orange-800 border-orange-200" },
+  room:    { label: "Conflit Salle",      color: "bg-red-100 text-red-800 border-red-200" },
+  teacher: { label: "Conflit Enseignant", color: "bg-purple-100 text-purple-800 border-purple-200" },
+  error:   { label: "Erreur",             color: "bg-gray-100 text-gray-800 border-gray-200" },
+};
 
 export default function AdminTimetablePage() {
   const [groups, setGroups] = useState<GroupeResponse[]>([]);
   const [matieres, setMatieres] = useState<MatiereResponse[]>([]);
   const [salles, setSalles] = useState<SalleResponse[]>([]);
-  
+
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [selectedMatiereId, setSelectedMatiereId] = useState<string>("");
   const [selectedSalleId, setSelectedSalleId] = useState<string>("");
-  
+
   const [activeTab, setActiveTab] = useState("groupe");
   const [courses, setCourses] = useState<EmploiDuTempsResponse[]>([]);
-  
+
   const [loadingData, setLoadingData] = useState(true);
   const [loadingTimetable, setLoadingTimetable] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState<Partial<CreateEmploiDuTempsPayload>>({});
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveConflicts, setSaveConflicts] = useState<ConflictDetail[]>([]);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const loadInitialData = useCallback(async () => {
     setLoadingData(true);
@@ -41,7 +64,7 @@ export default function AdminTimetablePage() {
       const [groupsRes, matieresRes, sallesRes] = await Promise.all([
         getGroupes(1, 100),
         getMatieres(1, 100),
-        getSalles(1, 100)
+        getSalles(1, 100),
       ]);
       setGroups(groupsRes.items || []);
       setMatieres(matieresRes.items || []);
@@ -58,13 +81,9 @@ export default function AdminTimetablePage() {
     setError(null);
     try {
       let response;
-      if (type === "groupe") {
-        response = await getTimetableByGroupe(id, 1, 100);
-      } else if (type === "matiere") {
-        response = await getTimetableByMatiere(id, 1, 100);
-      } else if (type === "salle") {
-        response = await getTimetableBySalle(id, 1, 100);
-      }
+      if (type === "groupe") response = await getTimetableByGroupe(id, 1, 100);
+      else if (type === "matiere") response = await getTimetableByMatiere(id, 1, 100);
+      else if (type === "salle") response = await getTimetableBySalle(id, 1, 100);
       setCourses(response?.items || []);
     } catch (err: any) {
       setError(err.message || "Erreur lors de la récupération de l'emploi du temps");
@@ -73,61 +92,83 @@ export default function AdminTimetablePage() {
     }
   }, []);
 
-  useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+  useEffect(() => { loadInitialData(); }, [loadInitialData]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setCourses([]);
-    if (value === "groupe" && selectedGroupId) {
-      loadTimetable(parseInt(selectedGroupId, 10), "groupe");
-    } else if (value === "matiere" && selectedMatiereId) {
-      loadTimetable(parseInt(selectedMatiereId, 10), "matiere");
-    } else if (value === "salle" && selectedSalleId) {
-      loadTimetable(parseInt(selectedSalleId, 10), "salle");
-    }
+    if (value === "groupe" && selectedGroupId) loadTimetable(parseInt(selectedGroupId, 10), "groupe");
+    else if (value === "matiere" && selectedMatiereId) loadTimetable(parseInt(selectedMatiereId, 10), "matiere");
+    else if (value === "salle" && selectedSalleId) loadTimetable(parseInt(selectedSalleId, 10), "salle");
   };
 
   const handleGroupSelect = (value: string | null) => {
-    if (!value) {
-      setSelectedGroupId("");
-      setCourses([]);
-      return;
-    }
+    if (!value) { setSelectedGroupId(""); setCourses([]); return; }
     setSelectedGroupId(value);
     loadTimetable(parseInt(value, 10), "groupe");
   };
 
   const handleMatiereSelect = (value: string | null) => {
-    if (!value) {
-      setSelectedMatiereId("");
-      setCourses([]);
-      return;
-    }
+    if (!value) { setSelectedMatiereId(""); setCourses([]); return; }
     setSelectedMatiereId(value);
     loadTimetable(parseInt(value, 10), "matiere");
   };
 
   const handleSalleSelect = (value: string | null) => {
-    if (!value) {
-      setSelectedSalleId("");
-      setCourses([]);
-      return;
-    }
+    if (!value) { setSelectedSalleId(""); setCourses([]); return; }
     setSelectedSalleId(value);
     loadTimetable(parseInt(value, 10), "salle");
   };
 
   const handleRefresh = () => {
-    if (activeTab === "groupe" && selectedGroupId) {
-      loadTimetable(parseInt(selectedGroupId, 10), "groupe");
-    } else if (activeTab === "matiere" && selectedMatiereId) {
-      loadTimetable(parseInt(selectedMatiereId, 10), "matiere");
-    } else if (activeTab === "salle" && selectedSalleId) {
-      loadTimetable(parseInt(selectedSalleId, 10), "salle");
-    } else {
-      loadInitialData();
+    if (activeTab === "groupe" && selectedGroupId) loadTimetable(parseInt(selectedGroupId, 10), "groupe");
+    else if (activeTab === "matiere" && selectedMatiereId) loadTimetable(parseInt(selectedMatiereId, 10), "matiere");
+    else if (activeTab === "salle" && selectedSalleId) loadTimetable(parseInt(selectedSalleId, 10), "salle");
+    else loadInitialData();
+  };
+
+  const handleOpenDialog = () => {
+    setFormData({});
+    setSaveError(null);
+    setSaveConflicts([]);
+    setSaveSuccess(false);
+    setDialogOpen(true);
+  };
+
+  const handleFormChange = (field: keyof CreateEmploiDuTempsPayload, value: string | number) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setSaveConflicts([]);
+    setSaveError(null);
+  };
+
+  const handleCreate = async () => {
+    const { groupe_id, matiere_id, salle_id, jour_semaine, heure_debut, heure_fin } = formData as CreateEmploiDuTempsPayload;
+    if (!groupe_id || !matiere_id || !salle_id || jour_semaine === undefined || !heure_debut || !heure_fin) {
+      setSaveError("Veuillez remplir tous les champs.");
+      return;
+    }
+
+    setSaving(true);
+    setSaveError(null);
+    setSaveConflicts([]);
+    setSaveSuccess(false);
+
+    try {
+      await createEmploiDuTemps({ groupe_id, matiere_id, salle_id, jour_semaine, heure_debut, heure_fin });
+      setSaveSuccess(true);
+      if (activeTab === "groupe" && selectedGroupId === String(groupe_id)) {
+        loadTimetable(groupe_id, "groupe");
+      }
+      setTimeout(() => setDialogOpen(false), 1200);
+    } catch (err: any) {
+      if (err instanceof ConflictApiError) {
+        setSaveConflicts(err.conflicts);
+        setSaveError(err.message);
+      } else {
+        setSaveError(err?.message || "Erreur lors de la création du créneau.");
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -155,16 +196,148 @@ export default function AdminTimetablePage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Gestion des Emplois du Temps</h1>
-            <p className="text-slate-500 mt-1">Consultez et exportez les plannings par groupe, matière ou salle.</p>
+            <p className="text-slate-500 mt-1">Consultez, exportez et créez des plannings par groupe, matière ou salle.</p>
           </div>
         </div>
-        <Button onClick={handleRefresh} variant="outline" size="sm" className="gap-2 bg-white border-slate-200">
-          <RefreshCw size={14} className={loadingTimetable ? "animate-spin" : ""} />
-          Actualiser
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleRefresh} variant="outline" size="sm" className="gap-2 bg-white border-slate-200">
+            <RefreshCw size={14} className={loadingTimetable ? "animate-spin" : ""} />
+            Actualiser
+          </Button>
+
+          {/* ── Create Créneau Button ── */}
+          <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700 text-white" onClick={handleOpenDialog}>
+            <Plus size={14} />
+            Nouveau Créneau
+          </Button>
+
+          {/* ── Create Créneau Dialog (controlled) ── */}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Calendar size={18} className="text-blue-600" />
+                  Créer un nouveau créneau
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="grid grid-cols-2 gap-4 py-2">
+                {/* Groupe */}
+                <div className="col-span-2 space-y-1">
+                  <Label>Groupe *</Label>
+                  <Select value={formData.groupe_id?.toString() || ""} onValueChange={v => handleFormChange("groupe_id", parseInt(v))}>
+                    <SelectTrigger className="w-full">
+                      <span className="truncate">{groups.find(g => g.id === formData.groupe_id)?.nom || "Sélectionner un groupe..."}</span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {groups.map(g => <SelectItem key={g.id} value={g.id.toString()}>{g.nom}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Matière */}
+                <div className="col-span-2 space-y-1">
+                  <Label>Matière *</Label>
+                  <Select value={formData.matiere_id?.toString() || ""} onValueChange={v => handleFormChange("matiere_id", parseInt(v))}>
+                    <SelectTrigger className="w-full">
+                      <span className="truncate">{matieres.find(m => m.id === formData.matiere_id)?.nom || "Sélectionner une matière..."}</span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {matieres.map(m => <SelectItem key={m.id} value={m.id.toString()}>{m.nom}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Salle */}
+                <div className="col-span-2 space-y-1">
+                  <Label>Salle *</Label>
+                  <Select value={formData.salle_id?.toString() || ""} onValueChange={v => handleFormChange("salle_id", parseInt(v))}>
+                    <SelectTrigger className="w-full">
+                      <span className="truncate">{salles.find(s => s.id === formData.salle_id)?.nom || "Sélectionner une salle..."}</span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {salles.map(s => <SelectItem key={s.id} value={s.id.toString()}>{s.nom} (Cap: {s.capacite})</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Jour */}
+                <div className="col-span-2 space-y-1">
+                  <Label>Jour *</Label>
+                  <Select value={formData.jour_semaine?.toString() ?? ""} onValueChange={v => handleFormChange("jour_semaine", parseInt(v))}>
+                    <SelectTrigger className="w-full">
+                      <span>{formData.jour_semaine !== undefined ? DAYS[formData.jour_semaine] : "Sélectionner un jour..."}</span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DAYS.map((d, i) => <SelectItem key={i} value={i.toString()}>{d}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Heures */}
+                <div className="space-y-1">
+                  <Label>Heure début *</Label>
+                  <Input type="time" value={formData.heure_debut || ""} onChange={e => handleFormChange("heure_debut", e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Heure fin *</Label>
+                  <Input type="time" value={formData.heure_fin || ""} onChange={e => handleFormChange("heure_fin", e.target.value)} />
+                </div>
+              </div>
+
+              {/* Conflict panel */}
+              {saveConflicts.length > 0 && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-red-700">
+                    <AlertTriangle size={15} />
+                    {saveConflicts.length} conflit{saveConflicts.length > 1 ? "s" : ""} détecté{saveConflicts.length > 1 ? "s" : ""}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {saveConflicts.map((c, i) => {
+                      const meta = CONFLICT_LABELS[c.type] || CONFLICT_LABELS.error;
+                      return (
+                        <li key={i} className="flex items-start gap-2">
+                          <Badge variant="outline" className={`text-[10px] shrink-0 mt-0.5 ${meta.color}`}>{meta.label}</Badge>
+                          <span className="text-xs text-red-700">{c.details}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+
+              {/* Generic error (non-conflict) */}
+              {saveError && saveConflicts.length === 0 && (
+                <p className="text-sm text-red-600 flex items-center gap-1.5">
+                  <AlertTriangle size={14} /> {saveError}
+                </p>
+              )}
+
+              {/* Success */}
+              {saveSuccess && (
+                <p className="text-sm text-green-700 flex items-center gap-1.5">
+                  <CheckCircle2 size={14} /> Créneau créé avec succès !
+                </p>
+              )}
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>Annuler</Button>
+                <Button
+                  onClick={handleCreate}
+                  disabled={saving || saveSuccess}
+                  className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                >
+                  {saving
+                    ? <><RefreshCw size={14} className="animate-spin" /> Vérification...</>
+                    : "Créer le créneau"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {/* Selector Dropdown Card with Tabs */}
+      {/* Selector Card with Tabs */}
       <Card className="border-none shadow-sm bg-white">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -182,13 +355,13 @@ export default function AdminTimetablePage() {
               <TabsTrigger value="matiere" className="gap-2"><BookOpen size={14}/> Par Matière</TabsTrigger>
               <TabsTrigger value="salle" className="gap-2"><MapPin size={14}/> Par Salle</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="groupe" className="max-w-md m-0">
               <Select value={selectedGroupId} onValueChange={handleGroupSelect}>
                 <SelectTrigger className="w-full bg-slate-50 border-slate-200/80">
                   <span className="truncate">
-                    {selectedGroup 
-                      ? `${selectedGroup.nom} ${selectedGroup.departement?.nom ? `(${selectedGroup.departement.nom})` : ""}` 
+                    {selectedGroup
+                      ? `${selectedGroup.nom} ${selectedGroup.departement?.nom ? `(${selectedGroup.departement.nom})` : ""}`
                       : "Sélectionner un groupe..."}
                   </span>
                 </SelectTrigger>
@@ -206,8 +379,8 @@ export default function AdminTimetablePage() {
               <Select value={selectedMatiereId} onValueChange={handleMatiereSelect}>
                 <SelectTrigger className="w-full bg-slate-50 border-slate-200/80">
                   <span className="truncate">
-                    {selectedMatiere 
-                      ? `${selectedMatiere.nom} ${selectedMatiere.enseignant ? `(Pr. ${selectedMatiere.enseignant.nom})` : ""}` 
+                    {selectedMatiere
+                      ? `${selectedMatiere.nom} ${selectedMatiere.enseignant ? `(Pr. ${selectedMatiere.enseignant.nom})` : ""}`
                       : "Sélectionner une matière..."}
                   </span>
                 </SelectTrigger>
@@ -225,8 +398,8 @@ export default function AdminTimetablePage() {
               <Select value={selectedSalleId} onValueChange={handleSalleSelect}>
                 <SelectTrigger className="w-full bg-slate-50 border-slate-200/80">
                   <span className="truncate">
-                    {selectedSalle 
-                      ? `${selectedSalle.nom} (Capacité: ${selectedSalle.capacite})` 
+                    {selectedSalle
+                      ? `${selectedSalle.nom} (Capacité: ${selectedSalle.capacite})`
                       : "Sélectionner une salle..."}
                   </span>
                 </SelectTrigger>
@@ -243,7 +416,7 @@ export default function AdminTimetablePage() {
         </CardContent>
       </Card>
 
-      {/* Timetable Display Area */}
+      {/* Timetable Display */}
       {(activeTab === "groupe" ? selectedGroupId : activeTab === "matiere" ? selectedMatiereId : selectedSalleId) ? (
         loadingTimetable ? (
           <LoadingSpinner className="min-h-[40vh]" />
@@ -254,12 +427,12 @@ export default function AdminTimetablePage() {
             courses={courses}
             viewType={activeTab as any}
             title={
-              activeTab === "groupe" ? `Groupe : ${selectedGroup?.nom || "Groupe"}` : 
-              activeTab === "matiere" ? `Matière : ${selectedMatiere?.nom || "Matière"}` :
-              `Salle : ${selectedSalle?.nom || "Salle"}`
+              activeTab === "groupe" ? `Emploi du temps - Groupe : ${selectedGroup?.nom || "Groupe"}` :
+              activeTab === "matiere" ? `Emploi du temps - Matière : ${selectedMatiere?.nom || "Matière"}` :
+              `Emploi du temps - Salle : ${selectedSalle?.nom || "Salle"}`
             }
             subtitle={
-              activeTab === "groupe" ? (selectedGroup?.departement?.nom ? `Département : ${selectedGroup.departement.nom}` : "") : 
+              activeTab === "groupe" ? (selectedGroup?.departement?.nom ? `Département : ${selectedGroup.departement.nom}` : "") :
               activeTab === "matiere" ? (selectedMatiere?.departement?.nom ? `Département : ${selectedMatiere.departement.nom}` : "") :
               ""
             }

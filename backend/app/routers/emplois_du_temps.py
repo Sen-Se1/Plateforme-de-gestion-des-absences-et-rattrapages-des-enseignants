@@ -153,16 +153,26 @@ def create_emploi_du_temps(
     if data.heure_debut >= data.heure_fin:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="L'heure de début doit être avant l'heure de fin")
 
-    try:
-        return EmploiDuTempsService.create(db, data)
-    except ConflictError as e:
+    # Step 1: Run specific slot conflict check (group, room, teacher overlap for this exact slot)
+    h_debut = data.heure_debut.replace(microsecond=0)
+    h_fin = data.heure_fin.replace(microsecond=0)
+    slot_conflicts = EmploiDuTempsService.check_conflicts(
+        db, data.groupe_id, data.salle_id, data.matiere_id,
+        data.jour_semaine, h_debut, h_fin
+    )
+    
+    if slot_conflicts:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail={
-                "message": "Scheduling conflict", 
-                "conflicts": [c["details"] for c in e.conflicts]
+                "message": "Conflit de planning détecté. Le créneau ne peut pas être créé.",
+                "conflicts": slot_conflicts
             }
         )
+
+    # Step 2: Save the new slot
+    db_item = EmploiDuTempsService.create(db, data)
+    return db_item
 
 @router.put("/{id}", response_model=EmploiDuTempsResponse)
 def update_emploi_du_temps(

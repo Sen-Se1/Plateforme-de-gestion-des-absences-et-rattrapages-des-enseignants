@@ -616,7 +616,12 @@
 ---
 
 ### `POST /emplois-du-temps/`
-**Description:** Creates a new recurring weekly timetable slot. The system automatically checks for conflicts before creation: a room cannot be used by two courses at the same time on the same day, and a teacher cannot teach two classes simultaneously. If any conflict is detected, a `400` is returned with the conflict details.
+**Description:** Creates a new recurring weekly timetable slot. Before saving, the system runs a comprehensive conflict check using `check_conflicts`, validating all three dimensions:
+- **Group conflict** — the group already has another course in the same time window on that day.
+- **Room conflict** — the room is already booked in the same time window on that day.
+- **Teacher conflict** — the teacher assigned to the subject is already teaching another course at the same time.
+
+If **any** conflict is detected, the entry is **not saved** and a `409 Conflict` is returned with the full structured list of all detected conflicts. The `GET /emplois-du-temps/conflits-planning` endpoint continues to be available for a global audit of all existing planning conflicts.
 
 **Access:** `admin_systeme`, `administration`.
 
@@ -633,16 +638,21 @@
 ```
 
 **Response 201:** `EmploiDuTempsResponse`  
-**Error 400:** `heure_debut >= heure_fin`, or scheduling conflict detected.  
-**Conflict response body:**
+**Error 400:** `heure_debut >= heure_fin`.  
+**Error 409:** One or more scheduling conflicts detected. Entry not created.  
+**Conflict response body (409):**
 ```json
 {
   "detail": {
-    "message": "Scheduling conflict",
-    "conflicts": ["La salle est déjà occupée de 08:00 à 10:00"]
+    "message": "Conflit de planning détecté. Le créneau ne peut pas être créé.",
+    "conflicts": [
+      { "type": "room",    "id": 5, "details": "Conflict room: Room 3 is already booked from 08:00:00 to 10:00:00" },
+      { "type": "teacher", "id": 5, "details": "Conflict teacher: Teacher is already teaching from 08:00:00 to 10:00:00" }
+    ]
   }
 }
 ```
+**Conflict types:** `group`, `room`, `teacher`, `error`.
 
 ---
 
