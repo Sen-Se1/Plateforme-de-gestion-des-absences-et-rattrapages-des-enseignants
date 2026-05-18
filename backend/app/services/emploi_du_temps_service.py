@@ -73,7 +73,7 @@ class EmploiDuTempsService:
         # Get teacher ID from matiere
         matiere = db.query(Matiere).filter(Matiere.id == matiere_id).first()
         if not matiere:
-            return [{"type": "error", "id": None, "details": f"Material ID {matiere_id} not found"}]
+            return [{"type": "error", "id": None, "details": f"Matière ID {matiere_id} introuvable."}]
         enseignant_id = matiere.enseignant_id
 
         # Overlap condition: existing_debut < new_fin AND new_debut < existing_fin
@@ -93,10 +93,11 @@ class EmploiDuTempsService:
             overlap_condition
         ).all()
         for c in group_conflicts:
+            group_name = c.groupe.nom if c.groupe else f"ID {groupe_id}"
             conflicts.append({
                 "type": "group",
                 "id": c.id,
-                "details": f"Conflict group: Group {groupe_id} already has a course from {c.heure_debut.strftime('%H:%M:%S')} to {c.heure_fin.strftime('%H:%M:%S')}"
+                "details": f"Le groupe '{group_name}' a déjà un cours programmé de {c.heure_debut.strftime('%H:%M')} à {c.heure_fin.strftime('%H:%M')}."
             })
 
         # 2. Room conflict
@@ -105,10 +106,11 @@ class EmploiDuTempsService:
             overlap_condition
         ).all()
         for c in room_conflicts:
+            room_name = c.salle.nom if c.salle else f"ID {salle_id}"
             conflicts.append({
                 "type": "room",
                 "id": c.id,
-                "details": f"Conflict room: Room {salle_id} is already booked from {c.heure_debut.strftime('%H:%M:%S')} to {c.heure_fin.strftime('%H:%M:%S')}"
+                "details": f"La salle '{room_name}' est déjà réservée de {c.heure_debut.strftime('%H:%M')} à {c.heure_fin.strftime('%H:%M')}."
             })
 
         # 3. Teacher conflict
@@ -117,10 +119,15 @@ class EmploiDuTempsService:
             overlap_condition
         ).all()
         for c in teacher_conflicts:
+            teacher_name = "L'enseignant"
+            if c.matiere and c.matiere.enseignant:
+                teacher_name = f"Pr. {c.matiere.enseignant.prenom} {c.matiere.enseignant.nom}"
+            elif matiere and matiere.enseignant:
+                teacher_name = f"Pr. {matiere.enseignant.prenom} {matiere.enseignant.nom}"
             conflicts.append({
                 "type": "teacher",
                 "id": c.id,
-                "details": f"Conflict teacher: Teacher is already teaching from {c.heure_debut.strftime('%H:%M:%S')} to {c.heure_fin.strftime('%H:%M:%S')}"
+                "details": f"{teacher_name} a déjà un cours prévu de {c.heure_debut.strftime('%H:%M')} à {c.heure_fin.strftime('%H:%M')}."
             })
 
         return conflicts

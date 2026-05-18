@@ -616,12 +616,16 @@
 ---
 
 ### `POST /emplois-du-temps/`
-**Description:** Creates a new recurring weekly timetable slot. Before saving, the system runs a comprehensive conflict check using `check_conflicts`, validating all three dimensions:
-- **Group conflict** — the group already has another course in the same time window on that day.
-- **Room conflict** — the room is already booked in the same time window on that day.
-- **Teacher conflict** — the teacher assigned to the subject is already teaching another course at the same time.
+**Description:** Creates a new recurring weekly timetable slot. Before saving, the system runs the following validations **in order**:
 
-If **any** conflict is detected, the entry is **not saved** and a `409 Conflict` is returned with the full structured list of all detected conflicts. The `GET /emplois-du-temps/conflits-planning` endpoint continues to be available for a global audit of all existing planning conflicts.
+1. **Existence check** — verifies that `groupe_id`, `matiere_id`, and `salle_id` all exist. Returns `404` for any missing entity.
+2. **Time check** — verifies that `heure_debut < heure_fin`. Returns `400` otherwise.
+3. **Conflict check** — runs `check_conflicts` across all three dimensions:
+   - **Group conflict** — the group already has a course in the same time window on that day.
+   - **Room conflict** — the room is already booked in the same time window on that day.
+   - **Teacher conflict** — the teacher assigned to the subject is already teaching at the same time.
+
+If **any** conflict is detected, the entry is **not saved** and a `409 Conflict` is returned with the full structured list. The `GET /emplois-du-temps/conflits-planning` endpoint continues to be available for a global audit of all existing planning conflicts.
 
 **Access:** `admin_systeme`, `administration`.
 
@@ -639,6 +643,7 @@ If **any** conflict is detected, the entry is **not saved** and a `409 Conflict`
 
 **Response 201:** `EmploiDuTempsResponse`  
 **Error 400:** `heure_debut >= heure_fin`.  
+**Error 404:** `groupe_id`, `matiere_id`, or `salle_id` not found. Response: `{ "detail": "Groupe ID 99 introuvable" }`  
 **Error 409:** One or more scheduling conflicts detected. Entry not created.  
 **Conflict response body (409):**
 ```json
@@ -646,8 +651,9 @@ If **any** conflict is detected, the entry is **not saved** and a `409 Conflict`
   "detail": {
     "message": "Conflit de planning détecté. Le créneau ne peut pas être créé.",
     "conflicts": [
-      { "type": "room",    "id": 5, "details": "Conflict room: Room 3 is already booked from 08:00:00 to 10:00:00" },
-      { "type": "teacher", "id": 5, "details": "Conflict teacher: Teacher is already teaching from 08:00:00 to 10:00:00" }
+      { "type": "group",   "id": 13, "details": "Le groupe 'Groupe B' a déjà un cours programmé de 08:00 à 10:00." },
+      { "type": "room",    "id": 13, "details": "La salle 'Salle 3' est déjà réservée de 08:00 à 10:00." },
+      { "type": "teacher", "id": 13, "details": "Pr. Jean Dupont a déjà un cours prévu de 08:00 à 10:00." }
     ]
   }
 }

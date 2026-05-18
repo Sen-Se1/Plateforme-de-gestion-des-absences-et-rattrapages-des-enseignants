@@ -8,7 +8,9 @@ from app.models.enums import RoleUtilisateur
 from app.schemas.emploi_du_temps import EmploiDuTempsCreate, EmploiDuTempsUpdate, EmploiDuTempsResponse
 from app.schemas.common import PaginatedResponse
 from app.services.emploi_du_temps_service import EmploiDuTempsService, ConflictError
-from app.services.groupe_service import GroupeService  # Assuming this exists for membership check
+from app.models.groupe import Groupe
+from app.models.matiere import Matiere
+from app.models.salle import Salle
 
 router = APIRouter()
 
@@ -149,7 +151,15 @@ def create_emploi_du_temps(
 ):
     if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Pas assez d'autorisations")
-    
+
+    # Step 0: Validate that all referenced entities exist
+    if not db.query(Groupe).filter(Groupe.id == data.groupe_id).first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Groupe ID {data.groupe_id} introuvable")
+    if not db.query(Matiere).filter(Matiere.id == data.matiere_id).first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Matière ID {data.matiere_id} introuvable")
+    if not db.query(Salle).filter(Salle.id == data.salle_id).first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Salle ID {data.salle_id} introuvable")
+
     if data.heure_debut >= data.heure_fin:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="L'heure de début doit être avant l'heure de fin")
 

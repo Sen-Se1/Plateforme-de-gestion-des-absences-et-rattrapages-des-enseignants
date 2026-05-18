@@ -98,10 +98,11 @@ export async function createEmploiDuTemps(data: CreateEmploiDuTempsPayload): Pro
       body: JSON.stringify(data),
     });
   } catch (err: any) {
-    // Surface 409 conflict details as a typed ConflictApiError
-    const detail = err?.detail || err?.body?.detail;
-    if (detail?.conflicts) {
-      throw new ConflictApiError(detail.message || "Conflit de planning", detail.conflicts);
+    const detail = err?.response?.detail;
+    if (detail?.conflicts && Array.isArray(detail.conflicts) && detail.conflicts.length > 0) {
+      const conflictErr = new Error(detail.message || "Conflit de planning");
+      (conflictErr as any).conflicts = detail.conflicts;
+      throw conflictErr;
     }
     throw err;
   }

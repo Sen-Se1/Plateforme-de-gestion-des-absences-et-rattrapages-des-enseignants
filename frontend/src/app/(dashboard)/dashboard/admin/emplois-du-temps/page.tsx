@@ -6,7 +6,7 @@ import { getMatieres } from "@/lib/api/matieres";
 import { getSalles } from "@/lib/api/salles";
 import {
   getTimetableByGroupe, getTimetableByMatiere, getTimetableBySalle,
-  createEmploiDuTemps, ConflictApiError, ConflictDetail
+  createEmploiDuTemps
 } from "@/lib/api/emploisDuTemps";
 import { GroupeResponse } from "@/types/groupe";
 import { MatiereResponse } from "@/types/matiere";
@@ -21,18 +21,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Calendar, Users, BookOpen, MapPin, RefreshCw, Info, Plus, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Calendar, Users, BookOpen, MapPin, RefreshCw, Info, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-
-const CONFLICT_LABELS: Record<string, { label: string; color: string }> = {
-  group:   { label: "Conflit Groupe",     color: "bg-orange-100 text-orange-800 border-orange-200" },
-  room:    { label: "Conflit Salle",      color: "bg-red-100 text-red-800 border-red-200" },
-  teacher: { label: "Conflit Enseignant", color: "bg-purple-100 text-purple-800 border-purple-200" },
-  error:   { label: "Erreur",             color: "bg-gray-100 text-gray-800 border-gray-200" },
-};
 
 export default function AdminTimetablePage() {
   const [groups, setGroups] = useState<GroupeResponse[]>([]);
@@ -53,9 +46,6 @@ export default function AdminTimetablePage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<CreateEmploiDuTempsPayload>>({});
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveConflicts, setSaveConflicts] = useState<ConflictDetail[]>([]);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const loadInitialData = useCallback(async () => {
     setLoadingData(true);
@@ -129,43 +119,60 @@ export default function AdminTimetablePage() {
 
   const handleOpenDialog = () => {
     setFormData({});
-    setSaveError(null);
-    setSaveConflicts([]);
-    setSaveSuccess(false);
     setDialogOpen(true);
   };
 
-  const handleFormChange = (field: keyof CreateEmploiDuTempsPayload, value: string | number) => {
+  const handleFormChange = (field: keyof CreateEmploiDuTempsPayload, value: string | number | null) => {
+    if (value === null) return;
     setFormData(prev => ({ ...prev, [field]: value }));
-    setSaveConflicts([]);
-    setSaveError(null);
   };
 
   const handleCreate = async () => {
     const { groupe_id, matiere_id, salle_id, jour_semaine, heure_debut, heure_fin } = formData as CreateEmploiDuTempsPayload;
+
+    // Client-side validation
     if (!groupe_id || !matiere_id || !salle_id || jour_semaine === undefined || !heure_debut || !heure_fin) {
-      setSaveError("Veuillez remplir tous les champs.");
+      toast.error("Veuillez remplir tous les champs.");
+      return;
+    }
+    if (heure_debut >= heure_fin) {
+      toast.error("L'heure de début doit être avant l'heure de fin.");
       return;
     }
 
     setSaving(true);
-    setSaveError(null);
-    setSaveConflicts([]);
-    setSaveSuccess(false);
-
     try {
       await createEmploiDuTemps({ groupe_id, matiere_id, salle_id, jour_semaine, heure_debut, heure_fin });
-      setSaveSuccess(true);
+      toast.success("Créneau créé avec succès !");
       if (activeTab === "groupe" && selectedGroupId === String(groupe_id)) {
         loadTimetable(groupe_id, "groupe");
       }
-      setTimeout(() => setDialogOpen(false), 1200);
+      setDialogOpen(false);
     } catch (err: any) {
-      if (err instanceof ConflictApiError) {
-        setSaveConflicts(err.conflicts);
-        setSaveError(err.message);
+      const conflicts: Array<{ type: string; id: number | null; details: string }> | undefined =
+        err?.conflicts;
+
+      if (Array.isArray(conflicts) && conflicts.length > 0) {
+        const labels: Record<string, string> = {
+          group:   "Conflit Groupe",
+          room:    "Conflit Salle",
+          teacher: "Conflit Enseignant",
+        };
+        toast.error(
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold text-sm">Conflits de planning détectés :</span>
+            <ul className="list-disc pl-4 space-y-1 text-xs">
+              {conflicts.map((c, idx) => (
+                <li key={idx}>
+                  <strong className="text-red-900">{labels[c.type] ?? "Conflit"}:</strong> {c.details}
+                </li>
+              ))}
+            </ul>
+          </div>,
+          { duration: 10000 }
+        );
       } else {
-        setSaveError(err?.message || "Erreur lors de la création du créneau.");
+        toast.error(err?.message || "Erreur lors de la création du créneau.");
       }
     } finally {
       setSaving(false);
@@ -225,7 +232,7 @@ export default function AdminTimetablePage() {
                 {/* Groupe */}
                 <div className="col-span-2 space-y-1">
                   <Label>Groupe *</Label>
-                  <Select value={formData.groupe_id?.toString() || ""} onValueChange={v => handleFormChange("groupe_id", parseInt(v))}>
+                  <Select value={formData.groupe_id?.toString() || ""} onValueChange={v => v && handleFormChange("groupe_id", parseInt(v))}>
                     <SelectTrigger className="w-full">
                       <span className="truncate">{groups.find(g => g.id === formData.groupe_id)?.nom || "Sélectionner un groupe..."}</span>
                     </SelectTrigger>
@@ -238,7 +245,7 @@ export default function AdminTimetablePage() {
                 {/* Matière */}
                 <div className="col-span-2 space-y-1">
                   <Label>Matière *</Label>
-                  <Select value={formData.matiere_id?.toString() || ""} onValueChange={v => handleFormChange("matiere_id", parseInt(v))}>
+                  <Select value={formData.matiere_id?.toString() || ""} onValueChange={v => v && handleFormChange("matiere_id", parseInt(v))}>
                     <SelectTrigger className="w-full">
                       <span className="truncate">{matieres.find(m => m.id === formData.matiere_id)?.nom || "Sélectionner une matière..."}</span>
                     </SelectTrigger>
@@ -251,7 +258,7 @@ export default function AdminTimetablePage() {
                 {/* Salle */}
                 <div className="col-span-2 space-y-1">
                   <Label>Salle *</Label>
-                  <Select value={formData.salle_id?.toString() || ""} onValueChange={v => handleFormChange("salle_id", parseInt(v))}>
+                  <Select value={formData.salle_id?.toString() || ""} onValueChange={v => v && handleFormChange("salle_id", parseInt(v))}>
                     <SelectTrigger className="w-full">
                       <span className="truncate">{salles.find(s => s.id === formData.salle_id)?.nom || "Sélectionner une salle..."}</span>
                     </SelectTrigger>
@@ -264,7 +271,7 @@ export default function AdminTimetablePage() {
                 {/* Jour */}
                 <div className="col-span-2 space-y-1">
                   <Label>Jour *</Label>
-                  <Select value={formData.jour_semaine?.toString() ?? ""} onValueChange={v => handleFormChange("jour_semaine", parseInt(v))}>
+                  <Select value={formData.jour_semaine?.toString() ?? ""} onValueChange={v => v && handleFormChange("jour_semaine", parseInt(v))}>
                     <SelectTrigger className="w-full">
                       <span>{formData.jour_semaine !== undefined ? DAYS[formData.jour_semaine] : "Sélectionner un jour..."}</span>
                     </SelectTrigger>
@@ -285,46 +292,11 @@ export default function AdminTimetablePage() {
                 </div>
               </div>
 
-              {/* Conflict panel */}
-              {saveConflicts.length > 0 && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
-                  <p className="flex items-center gap-1.5 text-sm font-semibold text-red-700">
-                    <AlertTriangle size={15} />
-                    {saveConflicts.length} conflit{saveConflicts.length > 1 ? "s" : ""} détecté{saveConflicts.length > 1 ? "s" : ""}
-                  </p>
-                  <ul className="space-y-1.5">
-                    {saveConflicts.map((c, i) => {
-                      const meta = CONFLICT_LABELS[c.type] || CONFLICT_LABELS.error;
-                      return (
-                        <li key={i} className="flex items-start gap-2">
-                          <Badge variant="outline" className={`text-[10px] shrink-0 mt-0.5 ${meta.color}`}>{meta.label}</Badge>
-                          <span className="text-xs text-red-700">{c.details}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              )}
-
-              {/* Generic error (non-conflict) */}
-              {saveError && saveConflicts.length === 0 && (
-                <p className="text-sm text-red-600 flex items-center gap-1.5">
-                  <AlertTriangle size={14} /> {saveError}
-                </p>
-              )}
-
-              {/* Success */}
-              {saveSuccess && (
-                <p className="text-sm text-green-700 flex items-center gap-1.5">
-                  <CheckCircle2 size={14} /> Créneau créé avec succès !
-                </p>
-              )}
-
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>Annuler</Button>
                 <Button
                   onClick={handleCreate}
-                  disabled={saving || saveSuccess}
+                  disabled={saving}
                   className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
                 >
                   {saving
