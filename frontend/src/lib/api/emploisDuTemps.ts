@@ -109,10 +109,20 @@ export async function createEmploiDuTemps(data: CreateEmploiDuTempsPayload): Pro
 }
 
 export async function updateEmploiDuTemps(id: number, data: UpdateEmploiDuTempsPayload): Promise<EmploiDuTempsResponse> {
-  return fetchWithAuth<EmploiDuTempsResponse>(`${BASE_URL}/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+  try {
+    return await fetchWithAuth<EmploiDuTempsResponse>(`${BASE_URL}/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  } catch (err: any) {
+    const detail = err?.response?.detail;
+    if (detail?.conflicts && Array.isArray(detail.conflicts) && detail.conflicts.length > 0) {
+      const conflictErr = new Error(detail.message || "Conflit de planning");
+      (conflictErr as any).conflicts = detail.conflicts;
+      throw conflictErr;
+    }
+    throw err;
+  }
 }
 
 export async function deleteEmploiDuTemps(id: number): Promise<void> {

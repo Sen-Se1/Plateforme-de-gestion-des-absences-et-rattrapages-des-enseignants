@@ -204,9 +204,9 @@ def update_emploi_du_temps(
         return updated
     except ConflictError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_409_CONFLICT,
             detail={
-                "message": "Scheduling conflict", 
+                "message": "Conflit de planning détecté. Le créneau ne peut pas être modifié.", 
                 "conflicts": [c["details"] for c in e.conflicts]
             }
         )

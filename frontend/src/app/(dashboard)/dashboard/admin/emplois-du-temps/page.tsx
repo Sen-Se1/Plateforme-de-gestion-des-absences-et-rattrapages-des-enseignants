@@ -6,12 +6,12 @@ import { getMatieres } from "@/lib/api/matieres";
 import { getSalles } from "@/lib/api/salles";
 import {
   getTimetableByGroupe, getTimetableByMatiere, getTimetableBySalle,
-  createEmploiDuTemps
+  createEmploiDuTemps, updateEmploiDuTemps, deleteEmploiDuTemps
 } from "@/lib/api/emploisDuTemps";
 import { GroupeResponse } from "@/types/groupe";
 import { MatiereResponse } from "@/types/matiere";
 import { SalleResponse } from "@/types/salle";
-import { EmploiDuTempsResponse, CreateEmploiDuTempsPayload } from "@/types/emploiDuTemps";
+import { EmploiDuTempsResponse, CreateEmploiDuTempsPayload, UpdateEmploiDuTempsPayload } from "@/types/emploiDuTemps";
 import { WeeklyTimetable } from "@/components/timetable/WeeklyTimetable";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ErrorMessage } from "@/components/ui/error-message";
@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Calendar, Users, BookOpen, MapPin, RefreshCw, Info, Plus } from "lucide-react";
+import { Calendar, Users, BookOpen, MapPin, RefreshCw, Info, Plus, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -46,6 +46,15 @@ export default function AdminTimetablePage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<CreateEmploiDuTempsPayload>>({});
   const [saving, setSaving] = useState(false);
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<EmploiDuTempsResponse | null>(null);
+  const [editFormData, setEditFormData] = useState<Partial<UpdateEmploiDuTempsPayload>>({});
+  const [editSaving, setEditSaving] = useState(false);
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingCourse, setDeletingCourse] = useState<EmploiDuTempsResponse | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const loadInitialData = useCallback(async () => {
     setLoadingData(true);
@@ -122,6 +131,32 @@ export default function AdminTimetablePage() {
     setDialogOpen(true);
   };
 
+  const toTimeInput = (t: string) => t?.substring(0, 5) || "";
+
+  const refreshCurrentView = () => {
+    if (activeTab === "groupe" && selectedGroupId) loadTimetable(parseInt(selectedGroupId, 10), "groupe");
+    else if (activeTab === "matiere" && selectedMatiereId) loadTimetable(parseInt(selectedMatiereId, 10), "matiere");
+    else if (activeTab === "salle" && selectedSalleId) loadTimetable(parseInt(selectedSalleId, 10), "salle");
+  };
+
+  const handleEditOpen = (course: EmploiDuTempsResponse) => {
+    setEditingCourse(course);
+    setEditFormData({
+      groupe_id:   course.groupe_id,
+      matiere_id:  course.matiere_id,
+      salle_id:    course.salle_id,
+      jour_semaine: course.jour_semaine,
+      heure_debut: toTimeInput(course.heure_debut),
+      heure_fin:   toTimeInput(course.heure_fin),
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteOpen = (course: EmploiDuTempsResponse) => {
+    setDeletingCourse(course);
+    setDeleteDialogOpen(true);
+  };
+
   const handleFormChange = (field: keyof CreateEmploiDuTempsPayload, value: string | number | null) => {
     if (value === null) return;
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -149,7 +184,7 @@ export default function AdminTimetablePage() {
       }
       setDialogOpen(false);
     } catch (err: any) {
-      const conflicts: Array<{ type: string; id: number | null; details: string }> | undefined =
+      const conflicts: Array<{ type: string; id: number | null; details: string } | string> | undefined =
         err?.conflicts;
 
       if (Array.isArray(conflicts) && conflicts.length > 0) {
@@ -162,11 +197,16 @@ export default function AdminTimetablePage() {
           <div className="flex flex-col gap-1">
             <span className="font-semibold text-sm">Conflits de planning détectés :</span>
             <ul className="list-disc pl-4 space-y-1 text-xs">
-              {conflicts.map((c, idx) => (
-                <li key={idx}>
-                  <strong className="text-red-900">{labels[c.type] ?? "Conflit"}:</strong> {c.details}
-                </li>
-              ))}
+              {conflicts.map((c, idx) => {
+                if (typeof c === "string") {
+                  return <li key={idx}>{c}</li>;
+                }
+                return (
+                  <li key={idx}>
+                    <strong className="text-red-900">{labels[c.type] ?? "Conflit"}:</strong> {c.details}
+                  </li>
+                );
+              })}
             </ul>
           </div>,
           { duration: 10000 }
@@ -176,6 +216,67 @@ export default function AdminTimetablePage() {
       }
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!editingCourse) return;
+    const { groupe_id, matiere_id, salle_id, jour_semaine, heure_debut, heure_fin } = editFormData;
+    if (!groupe_id || !matiere_id || !salle_id || jour_semaine === undefined || !heure_debut || !heure_fin) {
+      toast.error("Veuillez remplir tous les champs.");
+      return;
+    }
+    if (heure_debut >= heure_fin) {
+      toast.error("L'heure de début doit être avant l'heure de fin.");
+      return;
+    }
+    setEditSaving(true);
+    try {
+      await updateEmploiDuTemps(editingCourse.id, { groupe_id, matiere_id, salle_id, jour_semaine, heure_debut, heure_fin });
+      toast.success("Créneau modifié avec succès !");
+      setEditDialogOpen(false);
+      refreshCurrentView();
+    } catch (err: any) {
+      const conflicts: Array<{ type: string; id: number | null; details: string } | string> | undefined = err?.conflicts;
+      if (Array.isArray(conflicts) && conflicts.length > 0) {
+        const labels: Record<string, string> = { group: "Conflit Groupe", room: "Conflit Salle", teacher: "Conflit Enseignant" };
+        toast.error(
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold text-sm">Conflits de planning détectés :</span>
+            <ul className="list-disc pl-4 space-y-1 text-xs">
+              {conflicts.map((c, idx) => {
+                if (typeof c === "string") {
+                  return <li key={idx}>{c}</li>;
+                }
+                return (
+                  <li key={idx}><strong className="text-red-900">{labels[c.type] ?? "Conflit"}:</strong> {c.details}</li>
+                );
+              })}
+            </ul>
+          </div>,
+          { duration: 10000 }
+        );
+      } else {
+        toast.error(err?.message || "Erreur lors de la modification du créneau.");
+      }
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingCourse) return;
+    setDeleteLoading(true);
+    try {
+      await deleteEmploiDuTemps(deletingCourse.id);
+      toast.success("Créneau supprimé avec succès !");
+      setDeleteDialogOpen(false);
+      setDeletingCourse(null);
+      refreshCurrentView();
+    } catch (err: any) {
+      toast.error(err?.message || "Erreur lors de la suppression.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -306,6 +407,100 @@ export default function AdminTimetablePage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* ── Edit Dialog ── */}
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Pencil size={18} className="text-blue-600" />
+                  Modifier le créneau
+                  {editingCourse && (
+                    <span className="text-xs font-normal text-slate-500 ml-1">
+                      #{editingCourse.id} — {editingCourse.matiere?.nom || ""}
+                    </span>
+                  )}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="grid grid-cols-2 gap-4 py-2">
+                <div className="col-span-2 space-y-1">
+                  <Label>Groupe *</Label>
+                  <Select value={editFormData.groupe_id?.toString() || ""} onValueChange={v => v && setEditFormData(p => ({ ...p, groupe_id: parseInt(v) }))}>
+                    <SelectTrigger className="w-full"><span className="truncate">{groups.find(g => g.id === editFormData.groupe_id)?.nom || "Sélectionner..."}</span></SelectTrigger>
+                    <SelectContent>{groups.map(g => <SelectItem key={g.id} value={g.id.toString()}>{g.nom}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <Label>Matière *</Label>
+                  <Select value={editFormData.matiere_id?.toString() || ""} onValueChange={v => v && setEditFormData(p => ({ ...p, matiere_id: parseInt(v) }))}>
+                    <SelectTrigger className="w-full"><span className="truncate">{matieres.find(m => m.id === editFormData.matiere_id)?.nom || "Sélectionner..."}</span></SelectTrigger>
+                    <SelectContent>{matieres.map(m => <SelectItem key={m.id} value={m.id.toString()}>{m.nom}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <Label>Salle *</Label>
+                  <Select value={editFormData.salle_id?.toString() || ""} onValueChange={v => v && setEditFormData(p => ({ ...p, salle_id: parseInt(v) }))}>
+                    <SelectTrigger className="w-full"><span className="truncate">{salles.find(s => s.id === editFormData.salle_id)?.nom || "Sélectionner..."}</span></SelectTrigger>
+                    <SelectContent>{salles.map(s => <SelectItem key={s.id} value={s.id.toString()}>{s.nom} (Cap: {s.capacite})</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <Label>Jour *</Label>
+                  <Select value={editFormData.jour_semaine?.toString() ?? ""} onValueChange={v => v && setEditFormData(p => ({ ...p, jour_semaine: parseInt(v) }))}>
+                    <SelectTrigger className="w-full"><span>{editFormData.jour_semaine !== undefined ? DAYS[editFormData.jour_semaine] : "Sélectionner..."}</span></SelectTrigger>
+                    <SelectContent>{DAYS.map((d, i) => <SelectItem key={i} value={i.toString()}>{d}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>Heure début *</Label>
+                  <Input type="time" value={editFormData.heure_debut || ""} onChange={e => setEditFormData(p => ({ ...p, heure_debut: e.target.value }))} />
+                </div>
+                <div className="space-y-1">
+                  <Label>Heure fin *</Label>
+                  <Input type="time" value={editFormData.heure_fin || ""} onChange={e => setEditFormData(p => ({ ...p, heure_fin: e.target.value }))} />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={editSaving}>Annuler</Button>
+                <Button onClick={handleUpdate} disabled={editSaving} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                  {editSaving ? <><RefreshCw size={14} className="animate-spin" /> Vérification...</> : <><Pencil size={14} /> Enregistrer</>}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* ── Delete Confirm Dialog ── */}
+          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-red-600">
+                  <Trash2 size={18} />
+                  Supprimer le créneau
+                </DialogTitle>
+              </DialogHeader>
+              <div className="py-2 space-y-1 text-sm text-slate-700">
+                <p>Vous êtes sur le point de supprimer définitivement le créneau suivant :</p>
+                {deletingCourse && (
+                  <div className="mt-3 p-3 rounded-lg border border-red-100 bg-red-50 space-y-1 text-xs">
+                    <p><strong>Matière :</strong> {deletingCourse.matiere?.nom || "N/A"}</p>
+                    <p><strong>Groupe :</strong> {deletingCourse.groupe?.nom || "N/A"}</p>
+                    <p><strong>Salle :</strong> {deletingCourse.salle?.nom || "N/A"}</p>
+                    <p><strong>Jour :</strong> {DAYS[deletingCourse.jour_semaine]}</p>
+                    <p><strong>Horaire :</strong> {deletingCourse.heure_debut?.substring(0,5)} – {deletingCourse.heure_fin?.substring(0,5)}</p>
+                  </div>
+                )}
+                <p className="mt-3 text-xs text-slate-500">Cette action est irréversible.</p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleteLoading}>Annuler</Button>
+                <Button onClick={handleDeleteConfirm} disabled={deleteLoading} className="bg-red-600 hover:bg-red-700 text-white gap-2">
+                  {deleteLoading ? <><RefreshCw size={14} className="animate-spin" /> Suppression...</> : <><Trash2 size={14} /> Supprimer</>}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -408,6 +603,8 @@ export default function AdminTimetablePage() {
               activeTab === "matiere" ? (selectedMatiere?.departement?.nom ? `Département : ${selectedMatiere.departement.nom}` : "") :
               ""
             }
+            onEdit={handleEditOpen}
+            onDelete={handleDeleteOpen}
           />
         )
       ) : (

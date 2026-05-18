@@ -670,8 +670,23 @@ If **any** conflict is detected, the entry is **not saved** and a `409 Conflict`
 **Request Body:** Any subset of `groupe_id`, `matiere_id`, `salle_id`, `jour_semaine`, `heure_debut`, `heure_fin`.
 
 **Response 200:** `EmploiDuTempsResponse`  
-**Error 400:** Conflict detected.  
-**Error 404:** Entry not found.
+**Error 400:** `heure_debut >= heure_fin`.  
+**Error 404:** Entry not found. Response: `{ "detail": "Cours non trouvé" }`  
+**Error 409:** One or more scheduling conflicts detected. Entry not modified.  
+
+**Conflict response body (409):**
+```json
+{
+  "detail": {
+    "message": "Conflit de planning détecté. Le créneau ne peut pas être modifié.",
+    "conflicts": [
+      "Le groupe 'Groupe B' a déjà un cours programmé de 12:13 à 21:13.",
+      "La salle 'string2' est déjà réservée de 12:13 à 21:13.",
+      "Pr. Jean Dupont a déjà un cours prévu de 12:13 à 21:13."
+    ]
+  }
+}
+```
 
 ---
 

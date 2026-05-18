@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Calendar, AlertTriangle, Printer, UserRound, MapPin, Clock } from "lucide-react";
+import { Download, Calendar, AlertTriangle, Printer, UserRound, MapPin, Clock, Pencil, Trash2 } from "lucide-react";
 import { EmploiDuTempsResponse } from "@/types/emploiDuTemps";
 import {
   DAYS_OF_WEEK,
@@ -22,6 +22,8 @@ interface WeeklyTimetableProps {
   showDayFilter?: boolean;
   onDayChange?: (day: number | null) => void;
   viewType?: "groupe" | "matiere" | "salle" | "personnel";
+  onEdit?: (course: EmploiDuTempsResponse) => void;
+  onDelete?: (course: EmploiDuTempsResponse) => void;
 }
 
 export function WeeklyTimetable({
@@ -31,6 +33,8 @@ export function WeeklyTimetable({
   showDayFilter = true,
   onDayChange,
   viewType = "groupe",
+  onEdit,
+  onDelete,
 }: WeeklyTimetableProps) {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
@@ -211,6 +215,29 @@ export function WeeklyTimetable({
                                     : "bg-blue-50/40 border-blue-100 hover:bg-blue-50/60"
                                 } mb-1.5 last:mb-0`}
                               >
+                                {/* Action buttons — visible on hover when callbacks provided */}
+                                {(onEdit || onDelete) && (
+                                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                    {onEdit && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); onEdit(course); }}
+                                        className="p-1 rounded bg-white/90 border border-slate-200 hover:bg-blue-50 hover:border-blue-300 text-slate-500 hover:text-blue-600 shadow-sm transition-all"
+                                        title="Modifier"
+                                      >
+                                        <Pencil size={11} />
+                                      </button>
+                                    )}
+                                    {onDelete && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); onDelete(course); }}
+                                        className="p-1 rounded bg-white/90 border border-slate-200 hover:bg-red-50 hover:border-red-300 text-slate-500 hover:text-red-600 shadow-sm transition-all"
+                                        title="Supprimer"
+                                      >
+                                        <Trash2 size={11} />
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
                                 <div className="font-bold text-slate-800 text-xs md:text-sm leading-snug line-clamp-2">
                                   {viewType === "matiere"
                                     ? course.groupe?.nom || "Groupe inconnu"
