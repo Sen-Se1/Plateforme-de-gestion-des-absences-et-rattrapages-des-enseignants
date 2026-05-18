@@ -545,9 +545,9 @@
 > **`jour_semaine` encoding:** `0=Lundi, 1=Mardi, 2=Mercredi, 3=Jeudi, 4=Vendredi, 5=Samedi, 6=Dimanche`
 
 ### `GET /emplois-du-temps/groupe/{groupe_id}`
-**Description:** Returns the weekly recurring timetable for a specific student group. Each entry represents a fixed course slot: which subject, in which room, on which day and time. Students can only view timetables for groups they belong to; admins and teachers can view any group.
+**Description:** Returns the weekly recurring timetable for a specific student group. Each entry represents a fixed course slot: which subject, in which room, on which day and time.
 
-**Access:** All roles. Students must be members of the target group.
+**Access:** `admin_systeme`, `administration`.
 
 **Query Parameters:**
 
@@ -557,8 +557,7 @@
 | `per_page` | int | Default: 20 |
 | `jour_semaine` | int (0–6) | Filter by day of week (optional) |
 
-**Response 200:** `PaginatedResponse[EmploiDuTempsResponse]`  
-**Error 403:** Student not in this group.
+**Response 200:** `PaginatedResponse[EmploiDuTempsResponse]`
 
 ---
 

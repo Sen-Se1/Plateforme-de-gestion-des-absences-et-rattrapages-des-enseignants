@@ -12,16 +12,6 @@ from app.services.groupe_service import GroupeService  # Assuming this exists fo
 
 router = APIRouter()
 
-def check_group_membership(db: Session, user: Utilisateur, groupe_id: int):
-    if user.role == RoleUtilisateur.ETUDIANT:
-        from app.models.etudiant_groupe import etudiants_groupes
-        is_member = db.query(etudiants_groupes).filter(
-            etudiants_groupes.c.etudiant_id == user.id,
-            etudiants_groupes.c.groupe_id == groupe_id
-        ).first() is not None
-        if not is_member:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Vous n'êtes pas membre de ce groupe")
-
 @router.get("/groupe/{groupe_id}", response_model=PaginatedResponse[EmploiDuTempsResponse])
 def get_by_groupe(
     groupe_id: int,
@@ -31,10 +21,8 @@ def get_by_groupe(
     db: Session = Depends(get_db),
     current_user: Utilisateur = Depends(get_current_active_user)
 ):
-    if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION, RoleUtilisateur.ENSEIGNANT, RoleUtilisateur.ETUDIANT]:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Pas assez d'autorisations")
-    
-    check_group_membership(db, current_user, groupe_id)
+    if current_user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Réservé aux administrateurs")
     
     items, total = EmploiDuTempsService.get_by_groupe(db, groupe_id, page, per_page, jour_semaine)
     total_pages = (total + per_page - 1) // per_page

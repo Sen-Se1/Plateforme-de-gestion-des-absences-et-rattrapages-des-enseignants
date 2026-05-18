@@ -3,9 +3,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getGroupes } from "@/lib/api/groupes";
 import { getMatieres } from "@/lib/api/matieres";
-import { getTimetableByGroupe, getTimetableByMatiere } from "@/lib/api/emploisDuTemps";
+import { getSalles } from "@/lib/api/salles";
+import { getTimetableByGroupe, getTimetableByMatiere, getTimetableBySalle } from "@/lib/api/emploisDuTemps";
 import { GroupeResponse } from "@/types/groupe";
 import { MatiereResponse } from "@/types/matiere";
+import { SalleResponse } from "@/types/salle";
 import { EmploiDuTempsResponse } from "@/types/emploiDuTemps";
 import { WeeklyTimetable } from "@/components/timetable/WeeklyTimetable";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -13,14 +15,18 @@ import { ErrorMessage } from "@/components/ui/error-message";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Users, BookOpen, RefreshCw, Info } from "lucide-react";
+import { Calendar, Users, BookOpen, MapPin, RefreshCw, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function AdminTimetablePage() {
   const [groups, setGroups] = useState<GroupeResponse[]>([]);
   const [matieres, setMatieres] = useState<MatiereResponse[]>([]);
+  const [salles, setSalles] = useState<SalleResponse[]>([]);
+  
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [selectedMatiereId, setSelectedMatiereId] = useState<string>("");
+  const [selectedSalleId, setSelectedSalleId] = useState<string>("");
+  
   const [activeTab, setActiveTab] = useState("groupe");
   const [courses, setCourses] = useState<EmploiDuTempsResponse[]>([]);
   
@@ -32,12 +38,14 @@ export default function AdminTimetablePage() {
     setLoadingData(true);
     setError(null);
     try {
-      const [groupsRes, matieresRes] = await Promise.all([
+      const [groupsRes, matieresRes, sallesRes] = await Promise.all([
         getGroupes(1, 100),
-        getMatieres(1, 100)
+        getMatieres(1, 100),
+        getSalles(1, 100)
       ]);
       setGroups(groupsRes.items || []);
       setMatieres(matieresRes.items || []);
+      setSalles(sallesRes.items || []);
     } catch (err: any) {
       setError(err.message || "Erreur lors de la récupération des données");
     } finally {
@@ -45,14 +53,19 @@ export default function AdminTimetablePage() {
     }
   }, []);
 
-  const loadTimetable = useCallback(async (id: number, type: "groupe" | "matiere") => {
+  const loadTimetable = useCallback(async (id: number, type: "groupe" | "matiere" | "salle") => {
     setLoadingTimetable(true);
     setError(null);
     try {
-      const response = type === "groupe" 
-        ? await getTimetableByGroupe(id, 1, 100)
-        : await getTimetableByMatiere(id, 1, 100);
-      setCourses(response.items || []);
+      let response;
+      if (type === "groupe") {
+        response = await getTimetableByGroupe(id, 1, 100);
+      } else if (type === "matiere") {
+        response = await getTimetableByMatiere(id, 1, 100);
+      } else if (type === "salle") {
+        response = await getTimetableBySalle(id, 1, 100);
+      }
+      setCourses(response?.items || []);
     } catch (err: any) {
       setError(err.message || "Erreur lors de la récupération de l'emploi du temps");
     } finally {
@@ -71,6 +84,8 @@ export default function AdminTimetablePage() {
       loadTimetable(parseInt(selectedGroupId, 10), "groupe");
     } else if (value === "matiere" && selectedMatiereId) {
       loadTimetable(parseInt(selectedMatiereId, 10), "matiere");
+    } else if (value === "salle" && selectedSalleId) {
+      loadTimetable(parseInt(selectedSalleId, 10), "salle");
     }
   };
 
@@ -94,11 +109,23 @@ export default function AdminTimetablePage() {
     loadTimetable(parseInt(value, 10), "matiere");
   };
 
+  const handleSalleSelect = (value: string | null) => {
+    if (!value) {
+      setSelectedSalleId("");
+      setCourses([]);
+      return;
+    }
+    setSelectedSalleId(value);
+    loadTimetable(parseInt(value, 10), "salle");
+  };
+
   const handleRefresh = () => {
     if (activeTab === "groupe" && selectedGroupId) {
       loadTimetable(parseInt(selectedGroupId, 10), "groupe");
     } else if (activeTab === "matiere" && selectedMatiereId) {
       loadTimetable(parseInt(selectedMatiereId, 10), "matiere");
+    } else if (activeTab === "salle" && selectedSalleId) {
+      loadTimetable(parseInt(selectedSalleId, 10), "salle");
     } else {
       loadInitialData();
     }
@@ -106,9 +133,17 @@ export default function AdminTimetablePage() {
 
   const selectedGroup = groups.find((g) => g.id.toString() === selectedGroupId);
   const selectedMatiere = matieres.find((m) => m.id.toString() === selectedMatiereId);
+  const selectedSalle = salles.find((s) => s.id.toString() === selectedSalleId);
 
   if (loadingData) return <LoadingSpinner className="min-h-[60vh]" />;
-  if (error && !selectedGroupId && !selectedMatiereId) return <ErrorMessage message={error} onRetry={loadInitialData} />;
+  if (error && !selectedGroupId && !selectedMatiereId && !selectedSalleId) return <ErrorMessage message={error} onRetry={loadInitialData} />;
+
+  const getTabIcon = () => {
+    if (activeTab === "groupe") return <Users size={18} className="text-blue-500" />;
+    if (activeTab === "matiere") return <BookOpen size={18} className="text-indigo-500" />;
+    if (activeTab === "salle") return <MapPin size={18} className="text-emerald-500" />;
+    return <Calendar size={18} className="text-blue-500" />;
+  };
 
   return (
     <div className="space-y-8">
@@ -120,7 +155,7 @@ export default function AdminTimetablePage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Gestion des Emplois du Temps</h1>
-            <p className="text-slate-500 mt-1">Consultez et exportez les plannings par groupe ou par matière.</p>
+            <p className="text-slate-500 mt-1">Consultez et exportez les plannings par groupe, matière ou salle.</p>
           </div>
         </div>
         <Button onClick={handleRefresh} variant="outline" size="sm" className="gap-2 bg-white border-slate-200">
@@ -133,18 +168,19 @@ export default function AdminTimetablePage() {
       <Card className="border-none shadow-sm bg-white">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            {activeTab === "groupe" ? <Users size={18} className="text-blue-500" /> : <BookOpen size={18} className="text-indigo-500" />}
+            {getTabIcon()}
             Sélection de l'Emploi du Temps
           </CardTitle>
           <CardDescription>
-            Basculez entre la vue par groupe d'étudiants ou par matière pour charger la grille horaire.
+            Basculez entre la vue par groupe d'étudiants, par matière ou par salle pour charger la grille horaire.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="mb-6 grid grid-cols-2 max-w-sm">
+            <TabsList className="mb-6 grid grid-cols-3 max-w-lg">
               <TabsTrigger value="groupe" className="gap-2"><Users size={14}/> Par Groupe</TabsTrigger>
               <TabsTrigger value="matiere" className="gap-2"><BookOpen size={14}/> Par Matière</TabsTrigger>
+              <TabsTrigger value="salle" className="gap-2"><MapPin size={14}/> Par Salle</TabsTrigger>
             </TabsList>
             
             <TabsContent value="groupe" className="max-w-md m-0">
@@ -152,14 +188,14 @@ export default function AdminTimetablePage() {
                 <SelectTrigger className="w-full bg-slate-50 border-slate-200/80">
                   <span className="truncate">
                     {selectedGroup 
-                      ? `👥 ${selectedGroup.nom} ${selectedGroup.departement?.nom ? `(${selectedGroup.departement.nom})` : ""}` 
+                      ? `${selectedGroup.nom} ${selectedGroup.departement?.nom ? `(${selectedGroup.departement.nom})` : ""}` 
                       : "Sélectionner un groupe..."}
                   </span>
                 </SelectTrigger>
                 <SelectContent>
                   {groups.map((group) => (
                     <SelectItem key={group.id} value={group.id.toString()}>
-                      👥 {group.nom} {group.departement?.nom ? `(${group.departement.nom})` : ""}
+                      {group.nom} {group.departement?.nom ? `(${group.departement.nom})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -184,12 +220,31 @@ export default function AdminTimetablePage() {
                 </SelectContent>
               </Select>
             </TabsContent>
+
+            <TabsContent value="salle" className="max-w-md m-0">
+              <Select value={selectedSalleId} onValueChange={handleSalleSelect}>
+                <SelectTrigger className="w-full bg-slate-50 border-slate-200/80">
+                  <span className="truncate">
+                    {selectedSalle 
+                      ? `${selectedSalle.nom} (Capacité: ${selectedSalle.capacite})` 
+                      : "Sélectionner une salle..."}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  {salles.map((salle) => (
+                    <SelectItem key={salle.id} value={salle.id.toString()}>
+                      {salle.nom} (Cap: {salle.capacite})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
 
       {/* Timetable Display Area */}
-      {(activeTab === "groupe" ? selectedGroupId : selectedMatiereId) ? (
+      {(activeTab === "groupe" ? selectedGroupId : activeTab === "matiere" ? selectedMatiereId : selectedSalleId) ? (
         loadingTimetable ? (
           <LoadingSpinner className="min-h-[40vh]" />
         ) : error ? (
@@ -197,10 +252,16 @@ export default function AdminTimetablePage() {
         ) : (
           <WeeklyTimetable
             courses={courses}
-            title={activeTab === "groupe" ? `Emploi du temps - ${selectedGroup?.nom || "Groupe"}` : `Emploi du temps - ${selectedMatiere?.nom || "Matière"}`}
-            subtitle={activeTab === "groupe" 
-              ? (selectedGroup?.departement?.nom ? `Département : ${selectedGroup.departement.nom}` : "Planning hebdomadaire")
-              : (selectedMatiere?.enseignant ? `Enseignant : ${selectedMatiere.enseignant.prenom} ${selectedMatiere.enseignant.nom}` : "Planning matière")}
+            title={
+              activeTab === "groupe" ? `Emploi du temps - ${selectedGroup?.nom || "Groupe"}` : 
+              activeTab === "matiere" ? `Emploi du temps - ${selectedMatiere?.nom || "Matière"}` :
+              `Emploi du temps - ${selectedSalle?.nom || "Salle"}`
+            }
+            subtitle={
+              activeTab === "groupe" ? (selectedGroup?.departement?.nom ? `Département : ${selectedGroup.departement.nom}` : "Planning hebdomadaire") : 
+              activeTab === "matiere" ? (selectedMatiere?.enseignant ? `Enseignant : ${selectedMatiere.enseignant.prenom} ${selectedMatiere.enseignant.nom}` : "Planning matière") :
+              `Capacité : ${selectedSalle?.capacite} places`
+            }
           />
         )
       ) : (
@@ -209,7 +270,7 @@ export default function AdminTimetablePage() {
             <Info size={40} className="stroke-[1.5] text-slate-300 mb-3" />
             <h3 className="font-bold text-slate-700 text-sm">Aucune sélection</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm">
-              Veuillez sélectionner {activeTab === "groupe" ? "un groupe" : "une matière"} dans la liste déroulante ci-dessus pour afficher la grille horaire hebdomadaire.
+              Veuillez sélectionner une option dans la liste déroulante ci-dessus pour afficher la grille horaire hebdomadaire.
             </p>
           </CardContent>
         </Card>
