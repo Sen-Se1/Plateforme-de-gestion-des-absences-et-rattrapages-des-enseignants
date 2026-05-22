@@ -123,15 +123,11 @@ export default function StudentRattrapagesPage() {
                     <TableRow key={rattrapage.id} className="hover:bg-slate-50/50 transition-colors">
                       <TableCell className="font-semibold text-slate-900">
                         <div className="flex items-center gap-1.5">
-                          <BookOpen size={16} className="text-slate-400" />
                           <span>{rattrapage.absence?.matiere?.nom || `ID: ${rattrapage.absence?.matiere_id}`}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[10px]">
-                            {teacher ? `${teacher.nom[0]}${teacher.prenom[0]}` : "?"}
-                          </div>
                           <span className="text-sm font-medium text-slate-700">
                             {teacher ? `${teacher.nom} ${teacher.prenom}` : `ID: ${rattrapage.absence?.enseignant_id}`}
                           </span>
@@ -139,19 +135,16 @@ export default function StudentRattrapagesPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5 text-slate-700">
-                          <Calendar size={16} className="text-slate-400" />
                           <span>{formatDate(rattrapage.date_proposee)}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5 text-slate-700 font-semibold">
-                          <Clock size={16} className="text-slate-400" />
                           <span>{formatTime(rattrapage.heure_debut)} - {formatTime(rattrapage.heure_fin)}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5 text-slate-700">
-                          <MapPin size={16} className="text-slate-400" />
                           <span>{rattrapage.salle?.nom || `Salle: ${rattrapage.salle_id}`}</span>
                         </div>
                       </TableCell>

@@ -189,7 +189,6 @@ export default function TeacherRattrapagesPage() {
               Mes Propositions
             </TabsTrigger>
             <TabsTrigger value="propose" className="data-[state=active]:bg-white data-[state=active]:shadow-sm gap-1.5">
-              <PlusCircle size={16} />
               <span>Proposer un rattrapage</span>
             </TabsTrigger>
           </TabsList>
@@ -222,25 +221,21 @@ export default function TeacherRattrapagesPage() {
                       <TableRow key={rattrapage.id} className="hover:bg-slate-50/50 transition-colors">
                         <TableCell className="font-semibold text-slate-900">
                           <div className="flex items-center gap-1.5">
-                            <BookOpen size={16} className="text-slate-400" />
                             <span>{rattrapage.absence?.matiere?.nom || `ID: ${rattrapage.absence?.matiere_id}`}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5 text-slate-700">
-                            <Calendar size={16} className="text-slate-400" />
                             <span>{formatDate(rattrapage.date_proposee, false)}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5 text-slate-700">
-                            <Clock size={16} className="text-slate-400" />
                             <span>{formatTime(rattrapage.heure_debut)} - {formatTime(rattrapage.heure_fin)}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5 text-slate-700">
-                            <MapPin size={16} className="text-slate-400" />
                             <span>{rattrapage.salle?.nom || `Salle: ${rattrapage.salle_id}`}</span>
                           </div>
                         </TableCell>

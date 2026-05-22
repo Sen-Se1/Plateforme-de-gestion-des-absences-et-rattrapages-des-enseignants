@@ -49,9 +49,6 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 text-primary rounded-lg">
-            <ShieldCheck size={24} />
-          </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Tableau de Bord Administrateur</h1>
             <p className="text-slate-500 mt-1">Supervision globale de l'établissement.</p>
@@ -100,7 +97,6 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-6">
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <FileWarning size={20} className="text-amber-500" />
             Statistiques des Absences
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -123,7 +119,6 @@ export default function AdminDashboard() {
 
         <div className="space-y-6">
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <RefreshCw size={20} className="text-primary" />
             Statistiques des Rattrapages
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -148,7 +143,6 @@ export default function AdminDashboard() {
       {/* Infrastructure */}
       <div className="space-y-6">
         <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          <Building2 size={20} className="text-slate-500" />
           Infrastructure & Emploi du Temps
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

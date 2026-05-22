@@ -137,7 +137,6 @@ export default function EnseignantSallesPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <Building2 className="h-8 w-8 text-primary" />
             Salles de cours
           </h1>
           <p className="text-slate-500 mt-1">
@@ -263,7 +262,6 @@ export default function EnseignantSallesPage() {
             {/* Input Form */}
             <form onSubmit={(e) => handleCheckAvailability(e, 1)} className="bg-slate-50 p-6 rounded-xl border border-slate-100 space-y-4">
               <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
                 Vérifier les disponibilités
               </h3>
               <p className="text-sm text-slate-500">

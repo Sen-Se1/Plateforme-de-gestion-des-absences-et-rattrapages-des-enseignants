@@ -21,6 +21,7 @@ class AbsenceUpdate(BaseModel):
 class AbsenceSimple(AbsenceBase):
     id: int
     enseignant_id: int
+    enseignant: Optional[UtilisateurSimple] = None
     matiere: Optional[MatiereSimple] = None
     justificatif: Optional[str] = None
     statut: StatutAbsence

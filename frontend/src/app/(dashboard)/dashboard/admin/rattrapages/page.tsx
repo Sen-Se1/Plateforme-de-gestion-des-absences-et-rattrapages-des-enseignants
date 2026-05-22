@@ -279,25 +279,21 @@ export default function AdminRattrapagesPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5 text-slate-700">
-                          <BookOpen size={16} className="text-slate-400" />
                           <span>{rattrapage.absence?.matiere?.nom || `ID: ${rattrapage.absence?.matiere_id}`}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5 text-slate-700">
-                          <Calendar size={16} className="text-slate-400" />
                           <span>{formatDate(rattrapage.date_proposee, false)}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5 text-slate-700">
-                          <Clock size={16} className="text-slate-400" />
                           <span>{formatTime(rattrapage.heure_debut)} - {formatTime(rattrapage.heure_fin)}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5 text-slate-700 font-medium">
-                          <MapPin size={16} className="text-slate-400" />
                           <span>{rattrapage.salle?.nom || `Salle: ${rattrapage.salle_id}`}</span>
                         </div>
                       </TableCell>

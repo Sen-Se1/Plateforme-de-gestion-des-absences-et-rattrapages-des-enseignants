@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   FileWarning,
   CalendarCheck2,
@@ -104,9 +104,6 @@ export default function StudentDashboard() {
       <Card className="border-none shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary/10 text-primary rounded-lg">
-              <CalendarCheck2 size={20} />
-            </div>
             <CardTitle className="text-lg">Prochaines Séances de Rattrapage</CardTitle>
           </div>
           <Link href="/dashboard/etudiant/rattrapages">
@@ -135,21 +132,16 @@ export default function StudentDashboard() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2 text-slate-600">
-                        <Calendar size={14} className="text-slate-400" />
                         {formatDate(item.date, false)}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2 text-slate-600">
-                        <Clock3 size={14} className="text-slate-400" />
                         {item.heure_debut} - {item.heure_fin}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-700 gap-1 font-medium">
-                        <MapPin size={10} />
                         {item.salle}
-                      </Badge>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -40,7 +40,6 @@ export default function StudentTimetablePage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-            <Calendar size={24} />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Mon Emploi du Temps</h1>

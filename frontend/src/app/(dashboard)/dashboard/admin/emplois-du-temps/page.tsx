@@ -287,21 +287,11 @@ export default function AdminTimetablePage() {
   if (loadingData) return <LoadingSpinner className="min-h-[60vh]" />;
   if (error && !selectedGroupId && !selectedMatiereId && !selectedSalleId) return <ErrorMessage message={error} onRetry={loadInitialData} />;
 
-  const getTabIcon = () => {
-    if (activeTab === "groupe") return <Users size={18} className="text-blue-500" />;
-    if (activeTab === "matiere") return <BookOpen size={18} className="text-indigo-500" />;
-    if (activeTab === "salle") return <MapPin size={18} className="text-emerald-500" />;
-    return <Calendar size={18} className="text-blue-500" />;
-  };
-
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-            <Calendar size={24} />
-          </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Gestion des Emplois du Temps</h1>
             <p className="text-slate-500 mt-1">Consultez, exportez et créez des plannings par groupe, matière ou salle.</p>
@@ -324,7 +314,6 @@ export default function AdminTimetablePage() {
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <Calendar size={18} className="text-blue-600" />
                   Créer un nouveau créneau
                 </DialogTitle>
               </DialogHeader>
@@ -508,7 +497,6 @@ export default function AdminTimetablePage() {
       <Card className="border-none shadow-sm bg-white">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            {getTabIcon()}
             Sélection de l'Emploi du Temps
           </CardTitle>
           <CardDescription>
@@ -518,9 +506,9 @@ export default function AdminTimetablePage() {
         <CardContent>
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="mb-6 grid grid-cols-3 max-w-lg">
-              <TabsTrigger value="groupe" className="gap-2"><Users size={14}/> Par Groupe</TabsTrigger>
-              <TabsTrigger value="matiere" className="gap-2"><BookOpen size={14}/> Par Matière</TabsTrigger>
-              <TabsTrigger value="salle" className="gap-2"><MapPin size={14}/> Par Salle</TabsTrigger>
+              <TabsTrigger value="groupe" className="gap-2">Par Groupe</TabsTrigger>
+              <TabsTrigger value="matiere" className="gap-2">Par Matière</TabsTrigger>
+              <TabsTrigger value="salle" className="gap-2">Par Salle</TabsTrigger>
             </TabsList>
 
             <TabsContent value="groupe" className="max-w-md m-0">

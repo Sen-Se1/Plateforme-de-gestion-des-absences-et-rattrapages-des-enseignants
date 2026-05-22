@@ -236,7 +236,6 @@ export default function GroupesPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <Users className="h-8 w-8 text-primary" />
             {role === 'enseignant' ? 'Mes groupes' : 'Gestion des groupes'}
           </h1>
           <p className="text-slate-500 mt-1">
@@ -324,10 +323,7 @@ export default function GroupesPage() {
                     <TableCell className="font-medium text-slate-500">#{groupe.id}</TableCell>
                     <TableCell className="font-semibold text-slate-700">{groupe.nom}</TableCell>
                     <TableCell>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
-                        <GraduationCap className="h-3 w-3 mr-1" />
                         {groupe.departement?.nom || "Non spécifié"}
-                      </span>
                     </TableCell>
                     <TableCell className="text-slate-500">
                       {formatDate(groupe.created_at, false)}

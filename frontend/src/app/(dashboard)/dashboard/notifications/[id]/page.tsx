@@ -75,25 +75,16 @@ export default function NotificationDetailPage() {
         <div className="p-6 md:p-8">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
             <div className="flex items-start gap-4">
-              <div className="bg-primary/10 p-3 rounded-full hidden sm:block">
-                <Bell className="h-6 w-6 text-primary" />
-              </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">
                   {notification.titre}
                 </h1>
                 <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
                   <span>
                     {formatDate(notification.created_at, false)}
                   </span>
                 </div>
               </div>
-            </div>
-            <div>
-              <Badge variant="outline" className="font-normal text-xs uppercase tracking-wider">
-                Notification
-              </Badge>
             </div>
           </div>
 

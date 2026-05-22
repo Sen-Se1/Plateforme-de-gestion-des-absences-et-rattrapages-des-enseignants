@@ -217,7 +217,6 @@ export default function MatieresAdminPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <BookOpen className="h-8 w-8 text-primary" />
             Gestion des matières
           </h1>
           <p className="text-slate-500 mt-1">

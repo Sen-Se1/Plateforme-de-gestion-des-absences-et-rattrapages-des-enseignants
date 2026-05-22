@@ -9,7 +9,8 @@ import {
   PlusCircle,
   Calendar,
   MapPin,
-  Clock3
+  Clock3,
+  Search
 } from "lucide-react";
 import { getTeacherStats } from "@/lib/api/dashboard";
 import { getUpcomingRattrapages } from "@/lib/api/rattrapages";
@@ -125,8 +126,11 @@ export default function TeacherDashboard() {
         <Card className="border-none shadow-sm lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Rattrapages à Venir</CardTitle>
-            <Link href="/dashboard/enseignant/rattrapages" className="text-sm text-primary hover:underline">
-              Tout voir
+            <Link href="/dashboard/enseignant/rattrapages">
+              <Button variant="ghost" size="sm" className="text-slate-500 hover:text-primary gap-2">
+                <Search size={14} />
+                Voir tout
+              </Button>
             </Link>
           </CardHeader>
           <CardContent>
@@ -146,11 +150,9 @@ export default function TeacherDashboard() {
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium flex items-center gap-1">
-                            <Calendar size={12} className="text-slate-400" />
                             {formatDate(item.date_proposee, false)}
                           </span>
                           <span className="text-xs text-slate-500 flex items-center gap-1">
-                            <Clock3 size={12} className="text-slate-400" />
                             {formatTime(item.heure_debut)} - {formatTime(item.heure_fin)}
                           </span>
                         </div>
@@ -159,10 +161,7 @@ export default function TeacherDashboard() {
                         {item.absence?.matiere?.nom || "Non spécifiée"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="gap-1 font-normal">
-                          <MapPin size={10} />
-                          {item.salle?.nom || "A définir"}
-                        </Badge>
+                        {item.salle?.nom || "A définir"}
                       </TableCell>
                       <TableCell>
                         <Badge

@@ -86,9 +86,6 @@ export default function TeacherTimetablePage() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-            <Calendar size={24} />
-          </div>
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Mon Emploi du Temps</h1>
             <p className="text-slate-500 mt-1">Consultez votre planning global ou filtrez par matière enseignée.</p>
@@ -106,8 +103,8 @@ export default function TeacherTimetablePage() {
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <TabsList className="grid grid-cols-2 max-w-sm">
-                <TabsTrigger value="personnel" className="gap-2"><UserRound size={14}/> Planning Global</TabsTrigger>
-                <TabsTrigger value="matiere" className="gap-2"><BookOpen size={14}/> Par Matière</TabsTrigger>
+                <TabsTrigger value="personnel" className="gap-2">Planning Global</TabsTrigger>
+                <TabsTrigger value="matiere" className="gap-2">Par Matière</TabsTrigger>
               </TabsList>
 
               {activeTab === "matiere" && (

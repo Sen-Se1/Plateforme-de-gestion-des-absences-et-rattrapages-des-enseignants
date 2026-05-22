@@ -172,7 +172,6 @@ export function GroupStudentsDrawer({ isOpen, onClose, group, userRole }: GroupS
         <SheetContent className="sm:max-w-xl overflow-y-auto">
           <SheetHeader className="pb-6 border-b border-slate-100">
             <SheetTitle className="text-2xl font-bold flex items-center gap-2 text-slate-800">
-              <Users className="h-6 w-6 text-primary" />
               Membres du groupe
             </SheetTitle>
             {group && (
