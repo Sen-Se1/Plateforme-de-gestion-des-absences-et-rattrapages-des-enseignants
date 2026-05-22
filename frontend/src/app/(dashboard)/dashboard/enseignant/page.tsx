@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { 
-  FileWarning, 
-  CalendarCheck2, 
+import {
+  FileWarning,
+  CalendarCheck2,
   BookOpen,
   RefreshCw,
   PlusCircle,
@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { getTeacherStats } from "@/lib/api/dashboard";
 import { getUpcomingRattrapages } from "@/lib/api/rattrapages";
-import { Rattrapage } from "@/types/rattrapage";
+import { RattrapageResponse } from "@/types/rattrapage";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ErrorMessage } from "@/components/ui/error-message";
@@ -26,7 +26,7 @@ import { TeacherStats } from "@/types/dashboard";
 
 export default function TeacherDashboard() {
   const [stats, setStats] = useState<TeacherStats | null>(null);
-  const [upcoming, setUpcoming] = useState<Rattrapage[]>([]);
+  const [upcoming, setUpcoming] = useState<RattrapageResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +36,7 @@ export default function TeacherDashboard() {
     try {
       const [statsData, upcomingData] = await Promise.all([
         getTeacherStats(),
-        getUpcomingRattrapages(5)
+        getUpcomingRattrapages(1, 5)
       ]);
       setStats(statsData);
       setUpcoming(upcomingData.items || []);
@@ -62,45 +62,39 @@ export default function TeacherDashboard() {
           <h1 className="text-3xl font-bold text-slate-900">Espace Enseignant</h1>
           <p className="text-slate-500 mt-1">Gérez vos absences et planifiez vos rattrapages.</p>
         </div>
-        <div className="flex gap-3">
+        <div>
           <Button onClick={loadData} variant="outline" size="sm" className="gap-2">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             Actualiser
           </Button>
-          <Link href="/dashboard/absences/new">
-            <Button size="sm" className="gap-2">
-              <PlusCircle size={14} />
-              Déclarer une Absence
-            </Button>
-          </Link>
         </div>
       </div>
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatCard 
-          title="Mes Absences" 
-          value={stats.absences?.total_absences || 0} 
-          icon={FileWarning} 
+        <StatCard
+          title="Mes Absences"
+          value={stats.absences?.total_absences || 0}
+          icon={FileWarning}
           description={`${stats.absences?.absences_en_attente || 0} en attente de validation`}
-          color="text-amber-600" 
-          bg="bg-amber-50" 
+          color="text-amber-600"
+          bg="bg-amber-50"
         />
-        <StatCard 
-          title="Mes Rattrapages" 
-          value={stats.rattrapages?.total_rattrapages || 0} 
-          icon={CalendarCheck2} 
+        <StatCard
+          title="Mes Rattrapages"
+          value={stats.rattrapages?.total_rattrapages || 0}
+          icon={CalendarCheck2}
           description={`${stats.rattrapages?.rattrapages_valides || 0} séances confirmées`}
-          color="text-primary" 
-          bg="bg-primary/5" 
+          color="text-primary"
+          bg="bg-primary/5"
         />
-        <StatCard 
-          title="Charge de cours" 
-          value={stats.cours?.total_cours_par_semaine || 0} 
-          icon={BookOpen} 
+        <StatCard
+          title="Charge de cours"
+          value={stats.cours?.total_cours_par_semaine || 0}
+          icon={BookOpen}
           description={`Enseigne à : ${stats.cours?.groupes_enseignes?.join(", ") || "Aucun groupe"}`}
-          color="text-blue-600" 
-          bg="bg-blue-50" 
+          color="text-blue-600"
+          bg="bg-blue-50"
         />
       </div>
 
@@ -130,7 +124,7 @@ export default function TeacherDashboard() {
         <Card className="border-none shadow-sm lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg">Rattrapages à Venir</CardTitle>
-            <Link href="/dashboard/rattrapages" className="text-sm text-primary hover:underline">
+            <Link href="/dashboard/enseignant/rattrapages" className="text-sm text-primary hover:underline">
               Tout voir
             </Link>
           </CardHeader>
@@ -161,7 +155,7 @@ export default function TeacherDashboard() {
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {item.matiere?.nom || "Non spécifiée"}
+                        {item.absence?.matiere?.nom || "Non spécifiée"}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="gap-1 font-normal">
@@ -170,7 +164,7 @@ export default function TeacherDashboard() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge 
+                        <Badge
                           variant={item.statut === "valide" ? "default" : "secondary"}
                           className={item.statut === "valide" ? "bg-green-500 hover:bg-green-600" : ""}
                         >
@@ -185,7 +179,7 @@ export default function TeacherDashboard() {
               <div className="text-center py-12 text-slate-500">
                 <Calendar size={48} className="mx-auto mb-4 opacity-20" />
                 <p>Aucun rattrapage programmé pour le moment.</p>
-                <Link href="/dashboard/rattrapages/new">
+                <Link href="/dashboard/enseignant/rattrapages?tab=propose">
                   <Button variant="link" className="text-primary mt-2">
                     Proposer un rattrapage
                   </Button>

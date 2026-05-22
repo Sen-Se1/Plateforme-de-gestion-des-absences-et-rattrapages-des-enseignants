@@ -59,13 +59,13 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: "Matières", href: "/dashboard/enseignant/matieres", icon: BookOpen },
     { name: "Salles", href: "/dashboard/enseignant/salles", icon: Building2 },
     { name: "Mes Absences", href: "/dashboard/enseignant/absences", icon: FileWarning },
-    { name: "Mes Rattrapages", href: "/dashboard/rattrapages", icon: Calendar },
+    { name: "Mes Rattrapages", href: "/dashboard/enseignant/rattrapages", icon: Calendar },
   ];
 
   const studentNavigation = [
     { name: "Emploi du temps", href: "/dashboard/etudiant/emplois-du-temps", icon: Calendar },
     { name: "Salles", href: "/dashboard/etudiant/salles", icon: Building2 },
-    { name: "Rattrapages prévus", href: "/dashboard/rattrapages", icon: Clock },
+    { name: "Rattrapages prévus", href: "/dashboard/etudiant/rattrapages", icon: Clock },
   ];
 
   const adminNavItems = [
@@ -76,6 +76,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: "Salles", href: "/dashboard/admin/salles", icon: Building2 },
     { name: "Emplois du temps", href: "/dashboard/admin/emplois-du-temps", icon: Calendar },
     { name: "Suivi Absences", href: "/dashboard/admin/absences", icon: FileWarning },
+    { name: "Suivi Rattrapages", href: "/dashboard/admin/rattrapages", icon: Clock },
   ];
 
   const renderContent = () => (

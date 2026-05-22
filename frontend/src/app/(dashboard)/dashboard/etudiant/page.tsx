@@ -14,6 +14,7 @@ import {
   Table as TableIcon
 } from "lucide-react";
 import { getStudentStats } from "@/lib/api/dashboard";
+import { formatDate } from "@/utils/dateUtils";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ErrorMessage } from "@/components/ui/error-message";
@@ -108,7 +109,7 @@ export default function StudentDashboard() {
             </div>
             <CardTitle className="text-lg">Prochaines Séances de Rattrapage</CardTitle>
           </div>
-          <Link href="/dashboard/rattrapages">
+          <Link href="/dashboard/etudiant/rattrapages">
             <Button variant="ghost" size="sm" className="text-slate-500 hover:text-primary gap-2">
               <Search size={14} />
               Voir tout
@@ -136,7 +137,7 @@ export default function StudentDashboard() {
                     <TableCell>
                       <div className="flex items-center gap-2 text-slate-600">
                         <Calendar size={14} className="text-slate-400" />
-                        {new Date(item.date_proposee).toLocaleDateString()}
+                        {formatDate(item.date_proposee, false)}
                       </div>
                     </TableCell>
                     <TableCell>
