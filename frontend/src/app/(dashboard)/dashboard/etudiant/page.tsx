@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { RefreshCw } from "lucide-react";
 import { getStudentStats } from "@/lib/api/dashboard";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -57,7 +57,6 @@ export default function StudentDashboard() {
   if (error) return <ErrorMessage message={error} onRetry={loadData} />;
   if (!stats) return null;
 
-  // Mini Chart data calculation
   const absencesPieData = [
     { name: "Confirmées", value: stats.absences_enseignants?.validees || 0, fill: "var(--chart-3)" },
     { name: "En attente", value: stats.absences_enseignants?.en_attente || 0, fill: "var(--chart-4)" },
@@ -76,7 +75,6 @@ export default function StudentDashboard() {
     ? rattrapagesPieData 
     : [{ name: "Aucun", value: 1, fill: "var(--slate-100)" }];
 
-  // Circular gauge for cours/semaine
   const radius = 22;
   const circumference = 2 * Math.PI * radius;
   const maxCours = 10;
@@ -84,13 +82,11 @@ export default function StudentDashboard() {
   const coursPct = Math.min(100, Math.round((totalCours / maxCours) * 100));
   const coursStrokeOffset = circumference - (coursPct / 100) * circumference;
 
-  // Circular gauge for a_venir sessions relative to total rattrapages
   const aVenirVal = stats.rattrapages?.a_venir || 0;
   const aVenirTotal = stats.rattrapages?.total || 0;
   const aVenirPct = aVenirTotal > 0 ? Math.min(100, Math.round((aVenirVal / aVenirTotal) * 100)) : 0;
   const aVenirStrokeOffset = circumference - (aVenirPct / 100) * circumference;
 
-  // Main comparison overview data
   const overviewData = [
     { name: "Cours / Sem.", value: totalCours, fill: "var(--chart-1)" },
     { name: "Absences Profs", value: stats.absences_enseignants?.total || 0, fill: "var(--chart-5)" },

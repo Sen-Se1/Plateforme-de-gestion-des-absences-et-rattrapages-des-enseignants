@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   RefreshCw,
-  Clock
 } from "lucide-react";
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Pie, PieChart, Cell, Label } from "recharts";
 import { getAdminStats } from "@/lib/api/dashboard";
@@ -19,7 +18,6 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
-// Configs for our premium chart widgets
 const usersPieConfig = {
   enseignants: {
     label: "Enseignants",
@@ -131,7 +129,6 @@ export default function AdminDashboard() {
   if (error) return <ErrorMessage message={error} onRetry={loadStats} />;
   if (!stats) return null;
 
-  // Chart Data preparation
   const totalUsers = stats.users?.total_users || 0;
   const usersPieData = [
     { name: "etudiants", value: stats.users?.total_etudiants || 0, fill: "var(--color-etudiants)" },
@@ -153,7 +150,6 @@ export default function AdminDashboard() {
     { name: "annules", value: stats.rattrapages?.rattrapages_annules || 0, fill: "var(--color-annules)" },
   ];
 
-  // Merge monthly stats for combined chart
   const monthlyDataMap: Record<string, { monthLabel: string; absences: number; rattrapages: number }> = {};
 
   (stats.absences?.absences_par_mois || []).forEach((item) => {
@@ -184,7 +180,6 @@ export default function AdminDashboard() {
       rattrapages: monthlyDataMap[key].rattrapages,
     }));
 
-  // Infrastructure Data
   const resourcesData = [
     { name: "Salles", count: stats.salles_et_cours?.total_salles || 0, fill: "var(--color-salles)" },
     { name: "Groupes", count: stats.salles_et_cours?.total_groupes || 0, fill: "var(--color-groupes)" },
