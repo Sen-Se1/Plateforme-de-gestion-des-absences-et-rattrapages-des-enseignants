@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -55,7 +55,7 @@ import { RattrapageForm } from "@/components/rattrapage/RattrapageForm";
 import { formatDate, formatTime } from "@/utils/dateUtils";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
-export default function TeacherRattrapagesPage() {
+function TeacherRattrapagesPageContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -358,5 +358,17 @@ export default function TeacherRattrapagesPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+export default function TeacherRattrapagesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-full items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <TeacherRattrapagesPageContent />
+    </Suspense>
   );
 }

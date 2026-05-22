@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 from app.models import *
 from app.core.database import Base, engine
-from app.routers import auth, utilisateurs, departements, groupes, matieres, salles, emplois_du_temps, absences, rattrapages, dashboard, notifications
+from app.routers import auth, utilisateurs, departements, groupes, matieres, salles, emplois_du_temps, absences, rattrapages, dashboard, notifications, chatbot
 
 Base.metadata.create_all(bind=engine)
 
@@ -36,6 +36,7 @@ app.include_router(absences.router, prefix="/api/v1/absences", tags=["absences"]
 app.include_router(rattrapages.router, prefix="/api/v1/rattrapages", tags=["rattrapages"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
+app.include_router(chatbot.router, prefix="/api/v1/chatbot", tags=["chatbot"])
 
 @app.get("/")
 async def root():
