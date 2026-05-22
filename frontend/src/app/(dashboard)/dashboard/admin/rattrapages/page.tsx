@@ -69,12 +69,10 @@ export default function AdminRattrapagesPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFromFilter, setDateFromFilter] = useState<string>("");
   const [dateToFilter, setDateToFilter] = useState<string>("");
 
-  // Modals & Dialogs
   const [selectedRattrapage, setSelectedRattrapage] = useState<RattrapageResponse | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
@@ -82,7 +80,6 @@ export default function AdminRattrapagesPage() {
   const [actionType, setActionType] = useState<"validate" | "cancel" | "delete" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Auth protection
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");

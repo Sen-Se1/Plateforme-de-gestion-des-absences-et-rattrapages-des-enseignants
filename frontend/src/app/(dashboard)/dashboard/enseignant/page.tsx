@@ -23,6 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { TeacherStats } from "@/types/dashboard";
+import { formatDate, formatTime } from "@/utils/dateUtils";
 
 export default function TeacherDashboard() {
   const [stats, setStats] = useState<TeacherStats | null>(null);
@@ -146,11 +147,11 @@ export default function TeacherDashboard() {
                         <div className="flex flex-col">
                           <span className="font-medium flex items-center gap-1">
                             <Calendar size={12} className="text-slate-400" />
-                            {new Date(item.date_proposee).toLocaleDateString()}
+                            {formatDate(item.date_proposee, false)}
                           </span>
                           <span className="text-xs text-slate-500 flex items-center gap-1">
                             <Clock3 size={12} className="text-slate-400" />
-                            {item.heure_debut} - {item.heure_fin}
+                            {formatTime(item.heure_debut)} - {formatTime(item.heure_fin)}
                           </span>
                         </div>
                       </TableCell>

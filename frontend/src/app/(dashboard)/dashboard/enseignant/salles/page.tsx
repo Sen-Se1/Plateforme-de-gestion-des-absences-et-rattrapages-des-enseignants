@@ -26,6 +26,7 @@ import {
 
 import { getSalles, getAvailableSalles } from "@/lib/api/salles";
 import { SalleResponse } from "@/types/salle";
+import { formatDate, formatTime } from "@/utils/dateUtils";
 
 export default function EnseignantSallesPage() {
   const { data: session, status } = useSession();
@@ -326,7 +327,7 @@ export default function EnseignantSallesPage() {
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                   <h3 className="text-lg font-semibold text-slate-800">
-                    Salles libres le {new Date(checkDate).toLocaleDateString("fr-FR")} de {checkHeureDebut} à {checkHeureFin}
+                    Salles libres le {formatDate(checkDate, false)} de {formatTime(checkHeureDebut)} à {formatTime(checkHeureFin)}
                   </h3>
                 </div>
 

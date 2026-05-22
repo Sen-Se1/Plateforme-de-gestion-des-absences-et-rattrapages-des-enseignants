@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { AbsenceResponse } from "@/types/absence";
 import { AbsenceStatusBadge } from "./AbsenceStatusBadge";
 import { Calendar, BookOpen, User, FileText, Clock, AlignLeft } from "lucide-react";
+import { formatDate } from "@/utils/dateUtils";
 
 interface AbsenceDetailsDialogProps {
   absence: AbsenceResponse | null;
@@ -81,12 +82,7 @@ export function AbsenceDetailsDialog({
             <div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Date de l'absence</p>
               <p className="text-sm font-semibold text-slate-700">
-                {new Date(absence.date_absence).toLocaleDateString("fr-FR", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+                {formatDate(absence.date_absence, false)}
               </p>
             </div>
           </div>

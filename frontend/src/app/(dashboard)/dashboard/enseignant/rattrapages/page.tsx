@@ -66,22 +66,20 @@ export default function TeacherRattrapagesPage() {
   const [rattrapages, setRattrapages] = useState<RattrapageResponse[]>([]);
   const [absences, setAbsences] = useState<AbsenceResponse[]>([]);
   const [salles, setSalles] = useState<SalleResponse[]>([]);
-  
+
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [perPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
 
-  // Dialog states for cancellation/deletion
   const [selectedRattrapage, setSelectedRattrapage] = useState<RattrapageResponse | null>(null);
   const [actionType, setActionType] = useState<"cancel" | "delete" | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
-  // Auth protection
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -93,17 +91,13 @@ export default function TeacherRattrapagesPage() {
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Fetch teacher's rattrapages (paginated)
       const rRes = await getRattrapages(page, perPage);
       setRattrapages(rRes.items || []);
       setTotal(rRes.total || 0);
       setTotalPages(rRes.total_pages || 1);
-
-      // Fetch teacher's validated absences for proposal form
       const aRes = await getAbsences(1, 100, "valide");
       setAbsences(aRes.items || []);
 
-      // Fetch salles for proposal form
       const sRes = await getSalles(1, 100);
       setSalles(sRes.items || []);
     } catch (error: any) {

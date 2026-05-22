@@ -21,6 +21,7 @@ class AbsenceUpdate(BaseModel):
 class AbsenceSimple(AbsenceBase):
     id: int
     enseignant_id: int
+    matiere: Optional[MatiereSimple] = None
     justificatif: Optional[str] = None
     statut: StatutAbsence
     model_config = ConfigDict(from_attributes=True)

@@ -55,6 +55,7 @@ import { MatiereResponse } from "@/types/matiere";
 import { AbsenceStatusBadge } from "@/components/absence/AbsenceStatusBadge";
 import { AbsenceDetailsDialog } from "@/components/absence/AbsenceDetailsDialog";
 import { AbsenceForm } from "@/components/absence/AbsenceForm";
+import { formatDate } from "@/utils/dateUtils";
 
 function TeacherAbsencesPageContent() {
   const { data: session, status } = useSession();
@@ -302,11 +303,7 @@ function TeacherAbsencesPageContent() {
                             {absence.matiere?.nom || `Matière #${absence.matiere_id}`}
                           </TableCell>
                           <TableCell className="text-slate-500 font-medium">
-                            {new Date(absence.date_absence).toLocaleDateString("fr-FR", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {formatDate(absence.date_absence, false)}
                           </TableCell>
                           <TableCell className="text-slate-500 max-w-[200px] truncate">
                             {absence.motif}

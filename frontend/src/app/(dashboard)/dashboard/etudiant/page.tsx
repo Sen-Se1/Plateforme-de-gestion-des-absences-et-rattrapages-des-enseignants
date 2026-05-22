@@ -125,7 +125,6 @@ export default function StudentDashboard() {
                   <TableHead>Date</TableHead>
                   <TableHead>Horaire</TableHead>
                   <TableHead>Salle</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -137,7 +136,7 @@ export default function StudentDashboard() {
                     <TableCell>
                       <div className="flex items-center gap-2 text-slate-600">
                         <Calendar size={14} className="text-slate-400" />
-                        {formatDate(item.date_proposee, false)}
+                        {formatDate(item.date, false)}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -151,11 +150,6 @@ export default function StudentDashboard() {
                         <MapPin size={10} />
                         {item.salle}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity text-primary">
-                        Détails
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

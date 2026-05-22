@@ -47,6 +47,7 @@ import {
 } from "@/lib/api/departements";
 import { DepartementResponse } from "@/types/departement";
 import { DepartementForm } from "@/components/admin/DepartementForm";
+import { formatDate } from "@/utils/dateUtils";
 
 export default function DepartementsPage() {
   const { data: session, status } = useSession();
@@ -226,7 +227,7 @@ export default function DepartementsPage() {
                     <TableCell className="font-medium text-slate-500">#{dept.id}</TableCell>
                     <TableCell className="font-semibold text-slate-700">{dept.nom}</TableCell>
                     <TableCell className="text-slate-500">
-                      {new Date(dept.created_at).toLocaleDateString("fr-FR")}
+                      {formatDate(dept.created_at, false)}
                     </TableCell>
                     {isAdminSysteme && (
                       <TableCell className="text-right">

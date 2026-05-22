@@ -10,6 +10,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ArrowLeft, Calendar, Bell } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { formatDate } from "@/utils/dateUtils";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -84,9 +85,7 @@ export default function NotificationDetailPage() {
                 <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   <span>
-                    {format(new Date(notification.created_at), "EEEE d MMMM yyyy 'à' HH:mm", {
-                      locale: fr,
-                    })}
+                    {formatDate(notification.created_at, false)}
                   </span>
                 </div>
               </div>

@@ -54,6 +54,7 @@ import {
 import { AbsenceResponse } from "@/types/absence";
 import { AbsenceStatusBadge } from "@/components/absence/AbsenceStatusBadge";
 import { AbsenceDetailsDialog } from "@/components/absence/AbsenceDetailsDialog";
+import { formatDate } from "@/utils/dateUtils";
 
 export default function AdminAbsencesPage() {
   const { data: session, status } = useSession();
@@ -401,11 +402,7 @@ function AbsenceTable({ absences, isLoading, onViewDetails, onValidate, onReject
                 {absence.matiere?.nom || `Matière #${absence.matiere_id}`}
               </TableCell>
               <TableCell className="text-slate-500 font-medium">
-                {new Date(absence.date_absence).toLocaleDateString("fr-FR", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric"
-                })}
+                {formatDate(absence.date_absence, false)}
               </TableCell>
               <TableCell className="text-slate-500 max-w-[200px] truncate">
                 {absence.motif}

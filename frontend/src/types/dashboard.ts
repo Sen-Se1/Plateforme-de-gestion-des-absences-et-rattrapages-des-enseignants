@@ -66,8 +66,9 @@ export interface StudentStats {
     a_venir: number;
   };
   list_rattrapages_a_venir: Array<{
+    id: number;
+    date: string;
     matiere: string;
-    date_proposee: string;
     heure_debut: string;
     heure_fin: string;
     salle: string;

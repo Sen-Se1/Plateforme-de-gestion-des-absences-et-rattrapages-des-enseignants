@@ -52,6 +52,7 @@ import { MatiereResponse } from "@/types/matiere";
 import { DepartementResponse } from "@/types/departement";
 import { UtilisateurResponse } from "@/types/user";
 import { MatiereForm } from "@/components/admin/MatiereForm";
+import { formatDate } from "@/utils/dateUtils";
 import {
   Select,
   SelectContent,
@@ -326,7 +327,7 @@ export default function MatieresAdminPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-slate-500">
-                      {new Date(matiere.created_at).toLocaleDateString("fr-FR")}
+                      {formatDate(matiere.created_at, false)}
                     </TableCell>
                     {canEditOrCreate && (
                       <TableCell className="text-right">

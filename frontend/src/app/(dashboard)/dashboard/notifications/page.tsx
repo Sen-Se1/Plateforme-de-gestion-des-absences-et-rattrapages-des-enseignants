@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { formatDate } from "@/utils/dateUtils";
 import { Bell, Check, Trash2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -238,12 +239,12 @@ function NotificationsTable({
                   <span className="font-semibold">{notif.titre}</span>
                   <span className="text-sm text-muted-foreground line-clamp-2">{notif.message}</span>
                   <span className="text-[10px] md:hidden text-muted-foreground mt-1">
-                    {format(new Date(notif.created_at), "dd MMM yyyy HH:mm", { locale: fr })}
+                    {formatDate(notif.created_at, false)}
                   </span>
                 </div>
               </TableCell>
               <TableCell className="hidden md:table-cell text-muted-foreground text-sm whitespace-nowrap">
-                {format(new Date(notif.created_at), "dd MMM yyyy HH:mm", { locale: fr })}
+                {formatDate(notif.created_at, false)}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">

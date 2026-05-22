@@ -43,7 +43,6 @@ export default function StudentRattrapagesPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Auth protection
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");

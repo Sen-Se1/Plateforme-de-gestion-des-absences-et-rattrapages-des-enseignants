@@ -60,6 +60,7 @@ import { GroupeResponse } from "@/types/groupe";
 import { DepartementResponse } from "@/types/departement";
 import { GroupeForm } from "@/components/admin/GroupeForm";
 import { GroupStudentsDrawer } from "@/components/admin/GroupStudentsDrawer";
+import { formatDate } from "@/utils/dateUtils";
 
 export default function GroupesPage() {
   const { data: session, status } = useSession();
@@ -329,7 +330,7 @@ export default function GroupesPage() {
                       </span>
                     </TableCell>
                     <TableCell className="text-slate-500">
-                      {new Date(groupe.created_at).toLocaleDateString("fr-FR")}
+                      {formatDate(groupe.created_at, false)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

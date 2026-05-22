@@ -22,6 +22,7 @@ import {
 
 import { getMatieresByEnseignant } from "@/lib/api/matieres";
 import { MatiereResponse } from "@/types/matiere";
+import { formatDate } from "@/utils/dateUtils";
 
 export default function EnseignantMatieresPage() {
   const { data: session, status } = useSession();
@@ -147,7 +148,7 @@ export default function EnseignantMatieresPage() {
                       {matiere.departement?.nom || <span className="text-slate-400 italic">Aucun</span>}
                     </TableCell>
                     <TableCell className="text-slate-500">
-                      {new Date(matiere.created_at).toLocaleDateString("fr-FR")}
+                      {formatDate(matiere.created_at, false)}
                     </TableCell>
                   </TableRow>
                 ))

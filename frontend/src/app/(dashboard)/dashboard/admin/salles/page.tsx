@@ -52,6 +52,7 @@ import {
 } from "@/lib/api/salles";
 import { SalleResponse } from "@/types/salle";
 import { SalleForm } from "@/components/admin/SalleForm";
+import { formatDate } from "@/utils/dateUtils";
 
 export default function SallesAdminPage() {
   const { data: session, status } = useSession();
@@ -318,7 +319,7 @@ export default function SallesAdminPage() {
                           {salle.capacite} places
                         </TableCell>
                         <TableCell className="text-slate-500">
-                          {new Date(salle.created_at).toLocaleDateString("fr-FR")}
+                          {formatDate(salle.created_at, false)}
                         </TableCell>
                         {canEditOrCreate && (
                           <TableCell className="text-right">
@@ -448,7 +449,7 @@ export default function SallesAdminPage() {
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                   <h3 className="text-lg font-semibold text-slate-800">
-                    Salles libres le {new Date(checkDate).toLocaleDateString("fr-FR")} de {checkHeureDebut} à {checkHeureFin}
+                    Salles libres le {formatDate(checkDate, false)} de {checkHeureDebut} à {checkHeureFin}
                   </h3>
                 </div>
 
