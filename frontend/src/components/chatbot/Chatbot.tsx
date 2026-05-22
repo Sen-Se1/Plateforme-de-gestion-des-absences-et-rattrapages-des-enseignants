@@ -17,11 +17,15 @@ import {
   Loader2,
   X,
   MessageSquare,
-  Bot
+  Bot,
+  Paperclip,
+  Trash2,
+  File as FileIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import { ChatMessage as ChatMessageType } from "@/types/chatbot";
 import { sendChatBotMessage, confirmChatBotAction } from "@/lib/api/chatbot";
+import { fetchWithAuth } from "@/lib/api";
 import ChatMessage from "./ChatMessage";
 
 export default function Chatbot() {
@@ -31,11 +35,39 @@ export default function Chatbot() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  
+  const [attachedFile, setAttachedFile] = useState<{ name: string; path: string } | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const [hasLoaded, setHasLoaded] = useState(false);
+  
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
+    if (status === "authenticated" && session?.user && !hasLoaded) {
       const user = session.user as any;
+      const storageKey = `chatbot_messages_${user.id || user.email}`;
+      const saved = localStorage.getItem(storageKey);
+      
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMessages(
+              parsed.map((msg: any) => ({
+                ...msg,
+                timestamp: new Date(msg.timestamp),
+              }))
+            );
+            setHasLoaded(true);
+            return;
+          }
+        } catch (error) {
+          console.error("Failed to parse saved chat history:", error);
+        }
+      }
+      
       const firstName = user.prenom || "";
       const roleLabel = {
         admin_systeme: "Administrateur",
@@ -46,16 +78,26 @@ export default function Chatbot() {
 
       const welcomeMsg = `Bonjour ${firstName} ! Je suis votre assistant virtuel IA. En tant que **${roleLabel}**, je peux vous aider à interroger vos cours, planifier vos rattrapages et suivre vos absences. Que puis-je faire pour vous aujourd'hui ?`;
       
-      setMessages([
+      const welcome = [
         {
           id: "welcome",
-          role: "assistant",
+          role: "assistant" as const,
           content: welcomeMsg,
           timestamp: new Date(),
         },
-      ]);
+      ];
+      setMessages(welcome);
+      setHasLoaded(true);
     }
-  }, [status, session]);
+  }, [status, session, hasLoaded]);
+
+  useEffect(() => {
+    if (hasLoaded && status === "authenticated" && session?.user) {
+      const user = session.user as any;
+      const storageKey = `chatbot_messages_${user.id || user.email}`;
+      localStorage.setItem(storageKey, JSON.stringify(messages));
+    }
+  }, [messages, hasLoaded, status, session]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -69,22 +111,102 @@ export default function Chatbot() {
     return null;
   }
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    if (selectedFile.size > 5 * 1024 * 1024) {
+      toast.error("Le fichier dépasse la taille maximale autorisée (5 Mo).");
+      return;
+    }
+    const allowed = [".pdf", ".png", ".jpg", ".jpeg"];
+    const ext = selectedFile.name.substring(selectedFile.name.lastIndexOf(".")).toLowerCase();
+    if (!allowed.includes(ext)) {
+      toast.error("Format de fichier non autorisé. Format requis: PDF, PNG, JPG, JPEG");
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    try {
+      const response = await fetchWithAuth<{ success: boolean; filename: string; path: string }>("/chatbot/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.success) {
+        setAttachedFile({
+          name: response.filename,
+          path: response.path,
+        });
+        toast.success("Fichier justificatif attaché avec succès !");
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Erreur lors de l'envoi du fichier.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleClearChat = () => {
+    if (status !== "authenticated" || !session?.user) return;
+    const user = session.user as any;
+    const storageKey = `chatbot_messages_${user.id || user.email}`;
+    localStorage.removeItem(storageKey);
+    setAttachedFile(null);
+    
+    const firstName = user.prenom || "";
+    const roleLabel = {
+      admin_systeme: "Administrateur",
+      administration: "Administrateur",
+      enseignant: "Professeur",
+      etudiant: "Étudiant",
+    }[user.role as string] || "Utilisateur";
+
+    const welcomeMsg = `Bonjour ${firstName} ! Je suis votre assistant virtuel IA. En tant que **${roleLabel}**, je peux vous aider à interroger vos cours, planifier vos rattrapages et suivre vos absences. Que puis-je faire pour vous aujourd'hui ?`;
+    
+    setMessages([
+      {
+        id: "welcome",
+        role: "assistant",
+        content: welcomeMsg,
+        timestamp: new Date(),
+      },
+    ]);
+    toast.success("Conversation effacée.");
+  };
+
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && !attachedFile) || isLoading || isUploading) return;
 
     const userText = input.trim();
     setInput("");
 
+    let messageContent = userText;
+    if (attachedFile) {
+      messageContent = userText
+        ? `${userText} (Justificatif joint: ${attachedFile.name})`
+        : `J'ai joint le fichier justificatif : ${attachedFile.name}`;
+    }
+
     const userMsg: ChatMessageType = {
       id: crypto.randomUUID(),
       role: "user",
-      content: userText,
+      content: messageContent,
+      file: attachedFile ? { name: attachedFile.name, path: attachedFile.path } : undefined,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
+
+    const currentAttachment = attachedFile;
+    setAttachedFile(null);
 
     try {
       const history = messages
@@ -94,19 +216,32 @@ export default function Chatbot() {
           content: msg.content,
         }));
 
-      const response = await sendChatBotMessage(userText, history);
+      const response = await sendChatBotMessage(messageContent, history);
+
+      let actionData = response.action_data ? {
+        action: response.action_data.action,
+        params: response.action_data.params,
+      } : undefined;
+
+      if (actionData && actionData.action === "declare_absence" && currentAttachment) {
+        actionData.params = {
+          ...actionData.params,
+          justificatif_path: currentAttachment.path,
+        };
+      }
 
       const botMsg: ChatMessageType = {
         id: crypto.randomUUID(),
         role: "assistant",
         content: response.content,
         type: response.type,
-        actionData: response.action_data ? {
-          action: response.action_data.action,
-          params: response.action_data.params,
-        } : undefined,
+        actionData,
         timestamp: new Date(),
       };
+
+      if (currentAttachment && botMsg.actionData) {
+        (botMsg as any).tempAttachment = currentAttachment;
+      }
 
       setMessages((prev) => [...prev, botMsg]);
     } catch (error: any) {
@@ -125,8 +260,15 @@ export default function Chatbot() {
 
   const handleConfirmAction = async (action: string, params: Record<string, any>) => {
     setIsActionLoading(true);
+    
+    let finalParams = { ...params };
+    const confirmMessage = messages.find(m => m.type === "confirmation" && m.actionData?.action === action);
+    if (confirmMessage && (confirmMessage as any).tempAttachment && action === "declare_absence") {
+      finalParams.justificatif_path = (confirmMessage as any).tempAttachment.path;
+    }
+
     try {
-      const response = await confirmChatBotAction(action, params);
+      const response = await confirmChatBotAction(action, finalParams);
       
       setMessages((prev) => {
         return prev.map((msg) => {
@@ -224,14 +366,25 @@ export default function Chatbot() {
               </div>
             </div>
             
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => setIsOpen(false)}
-              className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer"
-            >
-              <X size={16} />
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={handleClearChat}
+                title="Effacer la conversation"
+                className="text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
+              >
+                <Trash2 size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setIsOpen(false)}
+                className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer"
+              >
+                <X size={16} />
+              </Button>
+            </div>
           </div>
 
           {/* Messages Log Container */}
@@ -263,22 +416,74 @@ export default function Chatbot() {
 
           {/* Input Text Form */}
           <form onSubmit={handleSend} className="p-3.5 border-t border-slate-100 bg-white">
-            <div className="relative flex items-center">
-              <Input
-                placeholder="Posez une question ou demandez une action..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={isLoading || isActionLoading}
-                className="pr-12 pl-4 py-5 bg-slate-50 border-slate-100/80 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-500/30 text-xs font-poppins placeholder:text-slate-400"
+            {/* File upload preview badge */}
+            {attachedFile && (
+              <div className="mb-2.5 p-2 bg-indigo-50/60 border border-indigo-100/50 rounded-xl flex items-center justify-between animate-in slide-in-from-bottom-1 duration-150">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                    <FileIcon size={14} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[11px] font-semibold text-slate-700 truncate max-w-[220px]">
+                      {attachedFile.name}
+                    </span>
+                    <span className="text-[9px] text-indigo-500/80 font-medium">Justificatif prêt à envoyer</span>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setAttachedFile(null)}
+                  className="h-6 w-6 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-indigo-100/50 cursor-pointer"
+                >
+                  <X size={13} />
+                </Button>
+              </div>
+            )}
+
+            <div className="relative flex items-center gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".pdf,.png,.jpg,.jpeg"
+                className="hidden"
               />
+              
               <Button
-                type="submit"
+                type="button"
+                variant="ghost"
                 size="icon"
-                disabled={!input.trim() || isLoading || isActionLoading}
-                className="absolute right-1.5 h-8 w-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-xs shrink-0 cursor-pointer disabled:opacity-40 disabled:bg-indigo-600"
+                disabled={isLoading || isActionLoading || isUploading}
+                onClick={() => fileInputRef.current?.click()}
+                className="h-10 w-10 shrink-0 rounded-xl bg-slate-50 border border-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-100 cursor-pointer transition-colors"
+                title="Joindre un justificatif"
               >
-                <Send size={13} />
+                {isUploading ? (
+                  <Loader2 size={15} className="animate-spin text-indigo-500" />
+                ) : (
+                  <Paperclip size={15} />
+                )}
               </Button>
+
+              <div className="relative flex-1 flex items-center">
+                <Input
+                  placeholder="Posez une question ou demandez une action..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  disabled={isLoading || isActionLoading || isUploading}
+                  className="pr-12 pl-4 py-5 bg-slate-50 border-slate-100/80 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-500/30 text-xs font-poppins placeholder:text-slate-400 w-full"
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={(!input.trim() && !attachedFile) || isLoading || isActionLoading || isUploading}
+                  className="absolute right-1.5 h-8 w-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-xs shrink-0 cursor-pointer disabled:opacity-40 disabled:bg-indigo-600"
+                >
+                  <Send size={13} />
+                </Button>
+              </div>
             </div>
           </form>
         </SheetContent>

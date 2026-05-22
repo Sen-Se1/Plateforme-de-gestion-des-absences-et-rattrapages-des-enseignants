@@ -7,6 +7,10 @@ export interface ChatMessage {
     action: string;
     params: Record<string, any>;
   };
+  file?: {
+    name: string;
+    path: string;
+  };
   timestamp: Date;
 }
 

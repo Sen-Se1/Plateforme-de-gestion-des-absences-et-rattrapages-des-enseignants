@@ -90,7 +90,15 @@ class AbsenceService:
         return absence
 
     @staticmethod
-    def declare_absence(db: Session, enseignant_id: int, matiere_id: int, date_absence: date, motif: str, justificatif_file: Optional[UploadFile] = None):
+    def declare_absence(
+        db: Session,
+        enseignant_id: int,
+        matiere_id: int,
+        date_absence: date,
+        motif: str,
+        justificatif_file: Optional[UploadFile] = None,
+        justificatif_path: Optional[str] = None
+    ):
         # 1. Ownership check
         matiere = AbsenceService._teacher_owns_matiere(db, enseignant_id, matiere_id)
         # 2. Daily schedule check
@@ -117,9 +125,9 @@ class AbsenceService:
             )
         
         # 5. File upload
-        justificatif_path = None
+        final_justificatif_path = justificatif_path
         if justificatif_file:
-            justificatif_path = save_upload_file(justificatif_file, subdir="")
+            final_justificatif_path = save_upload_file(justificatif_file, subdir="")
             
         # 6. Create record
         db_item = Absence(
@@ -127,7 +135,7 @@ class AbsenceService:
             matiere_id=matiere_id,
             date_absence=date_absence,
             motif=motif,
-            justificatif=justificatif_path,
+            justificatif=final_justificatif_path,
             statut=StatutAbsence.EN_ATTENTE
         )
         db.add(db_item)

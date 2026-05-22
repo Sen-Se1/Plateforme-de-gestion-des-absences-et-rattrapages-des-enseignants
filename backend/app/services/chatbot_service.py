@@ -591,13 +591,15 @@ class ChatbotService:
                 matiere_id = params["matiere_id"]
                 date_absence = date.fromisoformat(params["date_absence"])
                 motif = params["motif"]
+                justificatif_path = params.get("justificatif_path")
 
                 absence = AbsenceService.declare_absence(
                     db=db,
                     enseignant_id=user.id,
                     matiere_id=matiere_id,
                     date_absence=date_absence,
-                    motif=motif
+                    motif=motif,
+                    justificatif_path=justificatif_path
                 )
                 return {
                     "success": True,

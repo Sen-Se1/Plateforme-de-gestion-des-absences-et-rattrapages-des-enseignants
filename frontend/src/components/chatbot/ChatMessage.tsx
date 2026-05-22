@@ -1,44 +1,15 @@
 import React from "react";
 import { ChatMessage as ChatMessageType } from "@/types/chatbot";
 import { Button } from "@/components/ui/button";
-import { Sparkles, User, Check, X, AlertTriangle } from "lucide-react";
+import { Sparkles, User, Check, X, AlertTriangle, File as FileIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Markdown } from "./Markdown";
 
 interface ChatMessageProps {
   message: ChatMessageType;
   onConfirm?: (action: string, params: Record<string, any>) => void;
   onCancel?: () => void;
   isActionLoading?: boolean;
-}
-
-function formatMessageContent(text: string) {
-  if (!text) return "";
-  
-  const lines = text.split("\n");
-  return lines.map((line, i) => {
-    const parts = line.split(/(\*\*[^*]+\*\*)/g);
-    
-    const formattedLine = parts.map((part, j) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        const boldText = part.slice(2, -2);
-        return <strong key={j} className="font-bold text-slate-900">{boldText}</strong>;
-      }
-      
-      const italicParts = part.split(/(\*[^*]+\*)/g);
-      return italicParts.map((subPart, k) => {
-        if (subPart.startsWith("*") && subPart.endsWith("*")) {
-          return <em key={k} className="italic text-slate-800">{subPart.slice(1, -1)}</em>;
-        }
-        return subPart;
-      });
-    });
-
-    return (
-      <div key={i} className="min-h-[1.25rem]">
-        {formattedLine}
-      </div>
-    );
-  });
 }
 
 export default function ChatMessage({
@@ -67,13 +38,36 @@ export default function ChatMessage({
       <div className="flex flex-col gap-2 max-w-[85%]">
         <div
           className={cn(
-            "rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed font-poppins shadow-xs",
+            "rounded-2xl px-4 py-2.5 shadow-xs transition-all",
             isUser
               ? "bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white rounded-br-none"
               : "bg-slate-50 border border-slate-100 text-slate-700 rounded-bl-none"
           )}
         >
-          {formatMessageContent(message.content)}
+          {/* Markdown Content */}
+          <div className={cn("text-[13px]", isUser ? "[&_*]:text-white" : "")}>
+            <Markdown content={message.content} />
+          </div>
+
+          {/* Attached File Badge */}
+          {message.file && (
+            <div
+              className={cn(
+                "mt-2.5 p-2 rounded-xl flex items-center gap-2 border text-xs transition-all",
+                isUser
+                  ? "bg-white/10 border-white/10 text-white"
+                  : "bg-indigo-50/40 border-indigo-100/50 text-indigo-700"
+              )}
+            >
+              <FileIcon size={14} className={isUser ? "text-white" : "text-indigo-500"} />
+              <div className="flex flex-col">
+                <span className="font-semibold truncate max-w-[200px]">{message.file.name}</span>
+                <span className={cn("text-[9px]", isUser ? "text-white/60" : "text-slate-400")}>
+                  Justificatif attaché
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Confirmation Buttons for Actions */}
