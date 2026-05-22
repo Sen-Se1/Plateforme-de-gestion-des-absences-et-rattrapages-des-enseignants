@@ -1,15 +1,21 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 from app.models import *
 from app.core.database import Base, engine
 from app.routers import auth, utilisateurs, departements, groupes, matieres, salles, emplois_du_temps, absences, rattrapages, dashboard, notifications
 
 Base.metadata.create_all(bind=engine)
 
+os.makedirs("./uploads/justificatifs", exist_ok=True)
+
 app = FastAPI(
     title="Gestion des Absences et Rattrapages des Enseignants",
     version="1.0.0"
 )
+
+app.mount("/uploads", StaticFiles(directory="./uploads/justificatifs"), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,

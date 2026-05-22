@@ -6,8 +6,10 @@ export async function fetchWithAuth<T = any>(endpoint: string, options: RequestI
   const session = await getSession();
   const token = (session as any)?.accessToken;
 
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+
   const headers = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };

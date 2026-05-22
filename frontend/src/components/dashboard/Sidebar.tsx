@@ -58,7 +58,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: "Groupes", href: "/dashboard/enseignant/groupes", icon: Users },
     { name: "Matières", href: "/dashboard/enseignant/matieres", icon: BookOpen },
     { name: "Salles", href: "/dashboard/enseignant/salles", icon: Building2 },
-    { name: "Mes Absences", href: "/dashboard/absences", icon: FileWarning },
+    { name: "Mes Absences", href: "/dashboard/enseignant/absences", icon: FileWarning },
     { name: "Mes Rattrapages", href: "/dashboard/rattrapages", icon: Calendar },
   ];
 
@@ -75,6 +75,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: "Groupes", href: "/dashboard/admin/groupes", icon: Users },
     { name: "Salles", href: "/dashboard/admin/salles", icon: Building2 },
     { name: "Emplois du temps", href: "/dashboard/admin/emplois-du-temps", icon: Calendar },
+    { name: "Suivi Absences", href: "/dashboard/admin/absences", icon: FileWarning },
   ];
 
   const renderContent = () => (
