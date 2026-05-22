@@ -10,7 +10,9 @@ from app.schemas.absence import AbsenceCreate, AbsenceUpdate
 from fastapi import HTTPException, status, UploadFile
 from app.utils.upload import save_upload_file
 from app.services.notification_service import NotificationService
-
+from app.models.emploi_du_temps import EmploiDuTemps
+from app.models.etudiant_groupe import etudiants_groupes
+from app.utils.email import send_email
 
 def _get_admin_users(db: Session) -> List[Utilisateur]:
     """Return all administration and admin_systeme users."""
@@ -243,6 +245,31 @@ class AbsenceService:
                     "Absence validée",
                     f"Votre absence du {absence.date_absence} a été validée. Vous pouvez maintenant proposer un rattrapage."
                 )
+                # Get unique group IDs for the subject
+                group_rows = db.query(EmploiDuTemps.groupe_id).filter(EmploiDuTemps.matiere_id == absence.matiere_id).distinct().all()
+                group_ids = [row[0] for row in group_rows]
+                student_ids_set = set()
+                for gid in group_ids:
+                    student_rows = db.query(etudiants_groupes.c.etudiant_id).filter(etudiants_groupes.c.groupe_id == gid).all()
+                    student_ids_set.update([r[0] for r in student_rows])
+                # Send notifications and emails to each student
+                for sid in student_ids_set:
+                    try:
+                        NotificationService.create(
+                            db,
+                            sid,
+                            "Absence validée",
+                            f"L'absence du {absence.date_absence} pour la matière {absence.matiere.nom} a été validée. Consultez le planning du rattrapage."
+                        )
+                        student = db.query(Utilisateur).filter(Utilisateur.id == sid).first()
+                        if student and getattr(student, 'email', None):
+                            send_email(
+                                student.email,
+                                "Absence validée",
+                                f"Une absence a été validée le {absence.date_absence} pour la matière {absence.matiere.nom}. Consultez le planning."
+                            )
+                    except Exception:
+                        pass
             elif statut == StatutAbsence.REJETE:
                 motif_txt = absence.motif if absence.motif else "non spécifié"
                 NotificationService.create(
