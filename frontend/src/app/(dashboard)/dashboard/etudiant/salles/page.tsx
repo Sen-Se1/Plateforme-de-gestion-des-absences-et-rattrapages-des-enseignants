@@ -27,6 +27,7 @@ import {
 import { getSalles, getAvailableSalles } from "@/lib/api/salles";
 import { SalleResponse } from "@/types/salle";
 import { formatDate, formatTime } from "@/utils/dateUtils";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 export default function EtudiantSallesPage() {
   const { data: session, status } = useSession();
@@ -131,25 +132,28 @@ export default function EtudiantSallesPage() {
     );
   }
 
+  const handleRefresh = () => {
+    if (activeTab === "list") {
+      fetchAllSalles();
+    } else {
+      handleCheckAvailability(undefined, availPage);
+    }
+  };
+
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            Salles de cours
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Consultez la liste des salles disponibles ou trouvez une salle libre sur un créneau spécifique.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader
+        title="Salles de cours"
+        subtitle="Consultez la liste des salles disponibles ou trouvez une salle libre sur un créneau spécifique."
+        onRefresh={handleRefresh}
+        refreshing={activeTab === "list" ? isListLoading : isAvailLoading}
+      />
 
       {/* Tabs Menu */}
       <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
         <button
           onClick={() => setActiveTab("list")}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-all font-poppins ${
             activeTab === "list"
               ? "bg-white text-slate-800 shadow-sm"
               : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
@@ -159,7 +163,7 @@ export default function EtudiantSallesPage() {
         </button>
         <button
           onClick={() => setActiveTab("search")}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-all font-poppins ${
             activeTab === "search"
               ? "bg-white text-slate-800 shadow-sm"
               : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
@@ -170,7 +174,7 @@ export default function EtudiantSallesPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-6">
+      <div className="bg-white p-6 rounded-xl border-none shadow-sm hover:shadow-md transition-shadow space-y-6">
         
         {/* LIST TAB */}
         {activeTab === "list" && (

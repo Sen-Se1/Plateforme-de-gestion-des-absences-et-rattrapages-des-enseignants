@@ -61,6 +61,7 @@ import { DepartementResponse } from "@/types/departement";
 import { GroupeForm } from "@/components/admin/GroupeForm";
 import { GroupStudentsDrawer } from "@/components/admin/GroupStudentsDrawer";
 import { formatDate } from "@/utils/dateUtils";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 export default function GroupesPage() {
   const { data: session, status } = useSession();
@@ -232,25 +233,20 @@ export default function GroupesPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            {role === 'enseignant' ? 'Mes groupes' : 'Gestion des groupes'}
-          </h1>
-          <p className="text-slate-500 mt-1">
-            {role === 'enseignant' ? 'Gérez vos groupes d\'étudiants' : 'Gérez les groupes d\'étudiants et leur rattachement aux départements.'}
-          </p>
-        </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader
+        title={role === 'enseignant' ? 'Mes groupes' : 'Gestion des groupes'}
+        subtitle={role === 'enseignant' ? "Gérez vos groupes d'étudiants" : "Gérez les groupes d'étudiants et leur rattachement aux départements."}
+      >
         {canManage && (
-          <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90">
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={handleOpenCreate} className="gap-2 shadow-sm font-poppins">
+            <Plus className="h-4 w-4" />
             Nouveau groupe
           </Button>
         )}
-      </div>
+      </DashboardHeader>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-6">
+      <div className="bg-white p-6 rounded-xl shadow-sm border-none space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

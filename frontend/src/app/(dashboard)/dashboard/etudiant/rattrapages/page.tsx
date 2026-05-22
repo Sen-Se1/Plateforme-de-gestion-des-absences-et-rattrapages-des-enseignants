@@ -29,6 +29,7 @@ import {
 import { getUpcomingRattrapages } from "@/lib/api/rattrapages";
 import { RattrapageResponse } from "@/types/rattrapage";
 import { formatDate, formatTime } from "@/utils/dateUtils";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 export default function StudentRattrapagesPage() {
   const { data: session, status } = useSession();
@@ -83,21 +84,16 @@ export default function StudentRattrapagesPage() {
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-[1200px] mx-auto">
-      {/* Header */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Rattrapages Prévus</h1>
-          <p className="text-sm text-slate-500">Consultez les séances de rattrapage programmées pour vos groupes.</p>
-        </div>
-        <Button onClick={fetchRattrapages} variant="outline" className="self-start md:self-auto gap-2">
-          <RefreshCw size={16} />
-          <span>Actualiser</span>
-        </Button>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader
+        title="Rattrapages Prévus"
+        subtitle="Consultez les séances de rattrapage programmées pour vos groupes."
+        onRefresh={fetchRattrapages}
+        refreshing={isLoading}
+      />
 
       {/* Main Table */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border-none shadow-sm hover:shadow-md transition-shadow overflow-hidden">
         {rattrapages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">
             <AlertCircle className="h-10 w-10 text-slate-400 mb-2" />
@@ -135,7 +131,7 @@ export default function StudentRattrapagesPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5 text-slate-700">
-                          <span>{formatDate(rattrapage.date_proposee)}</span>
+                          <span>{formatDate(rattrapage.date_proposee, false)}</span>
                         </div>
                       </TableCell>
                       <TableCell>

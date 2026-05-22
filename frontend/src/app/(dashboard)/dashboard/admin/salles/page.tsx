@@ -53,6 +53,7 @@ import {
 import { SalleResponse } from "@/types/salle";
 import { SalleForm } from "@/components/admin/SalleForm";
 import { formatDate } from "@/utils/dateUtils";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 export default function SallesAdminPage() {
   const { data: session, status } = useSession();
@@ -216,24 +217,18 @@ export default function SallesAdminPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            Gestion des salles
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Gerez les salles de classe, amphithéâtres, capacités, et vérifiez leurs disponibilités.
-          </p>
-        </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader
+        title="Gestion des salles"
+        subtitle="Gerez les salles de classe, amphithéâtres, capacités, et vérifiez leurs disponibilités."
+      >
         {canEditOrCreate && activeTab === "list" && (
-          <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90">
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={handleOpenCreate} className="gap-2 shadow-sm font-poppins">
+            <Plus className="h-4 w-4" />
             Nouvelle salle
           </Button>
         )}
-      </div>
+      </DashboardHeader>
 
       {/* Tabs Menu */}
       <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">

@@ -23,6 +23,7 @@ import {
 import { getMatieresByEnseignant } from "@/lib/api/matieres";
 import { MatiereResponse } from "@/types/matiere";
 import { formatDate } from "@/utils/dateUtils";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 export default function EnseignantMatieresPage() {
   const { data: session, status } = useSession();
@@ -84,21 +85,16 @@ export default function EnseignantMatieresPage() {
   });
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            Mes matières
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Consultez les matières qui vous sont assignées pour cette année académique.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader
+        title="Mes matières"
+        subtitle="Consultez les matières qui vous sont assignées pour cette année académique."
+        onRefresh={fetchMyMatieres}
+        refreshing={isLoading}
+      />
 
       {/* Main Container */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-6">
+      <div className="bg-white p-6 rounded-xl border-none shadow-sm hover:shadow-md transition-shadow space-y-6">
         {/* Search */}
         <div className="flex items-center justify-between">
           <div className="relative w-full max-w-sm">

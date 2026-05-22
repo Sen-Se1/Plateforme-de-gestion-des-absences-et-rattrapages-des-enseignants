@@ -1,5 +1,5 @@
 "use client";
-
+ 
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -11,7 +11,7 @@ import {
   Trash2,
   Building
 } from "lucide-react";
-
+ 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,7 +38,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
+ 
 import { 
   getDepartements, 
   createDepartement, 
@@ -48,13 +48,14 @@ import {
 import { DepartementResponse } from "@/types/departement";
 import { DepartementForm } from "@/components/admin/DepartementForm";
 import { formatDate } from "@/utils/dateUtils";
-
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+ 
 export default function DepartementsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const user = session?.user as any;
   const role = user?.role;
-
+ 
   const [departements, setDepartements] = useState<DepartementResponse[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -62,12 +63,12 @@ export default function DepartementsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-
+ 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedDept, setSelectedDept] = useState<DepartementResponse | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+ 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -75,7 +76,7 @@ export default function DepartementsPage() {
       router.push("/dashboard");
     }
   }, [status, role, router]);
-
+ 
   const fetchDepartements = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -89,17 +90,17 @@ export default function DepartementsPage() {
       setIsLoading(false);
     }
   }, [page, perPage, search]);
-
+ 
   useEffect(() => {
     if (status === "authenticated" && ["admin_systeme", "administration"].includes(role)) {
       const delayDebounceFn = setTimeout(() => {
         fetchDepartements();
       }, 500);
-
+ 
       return () => clearTimeout(delayDebounceFn);
     }
   }, [fetchDepartements, search, status, role]);
-
+ 
   if (status === "loading" || !["admin_systeme", "administration"].includes(role)) {
     return (
       <div className="flex h-full items-center justify-center p-8">
@@ -107,24 +108,24 @@ export default function DepartementsPage() {
       </div>
     );
   }
-
+ 
   const isAdminSysteme = role === "admin_systeme";
-
+ 
   const handleOpenCreate = () => {
     setSelectedDept(null);
     setIsFormOpen(true);
   };
-
+ 
   const handleOpenEdit = (dept: DepartementResponse) => {
     setSelectedDept(dept);
     setIsFormOpen(true);
   };
-
+ 
   const handleOpenDelete = (dept: DepartementResponse) => {
     setSelectedDept(dept);
     setIsDeleteDialogOpen(true);
   };
-
+ 
   const handleFormSubmit = async (data: any) => {
     try {
       setIsSubmitting(true);
@@ -143,7 +144,7 @@ export default function DepartementsPage() {
       setIsSubmitting(false);
     }
   };
-
+ 
   const handleDelete = async () => {
     if (!selectedDept) return;
     
@@ -159,27 +160,22 @@ export default function DepartementsPage() {
       setIsSubmitting(false);
     }
   };
-
+ 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            Gestion des départements
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Gérez les départements de l'établissement.
-          </p>
-        </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader
+        title="Gestion des départements"
+        subtitle="Gérez les départements de l'établissement."
+      >
         {isAdminSysteme && (
-          <Button onClick={handleOpenCreate} className="bg-primary hover:bg-primary/90">
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={handleOpenCreate} className="gap-2 shadow-sm font-poppins">
+            <Plus className="h-4 w-4" />
             Nouveau département
           </Button>
         )}
-      </div>
-
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-6">
+      </DashboardHeader>
+ 
+      <div className="bg-white p-6 rounded-xl shadow-sm border-none space-y-6">
         <div className="flex items-center justify-between">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

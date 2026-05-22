@@ -53,6 +53,7 @@ import { RattrapageResponse, CreateRattrapagePayload } from "@/types/rattrapage"
 import { RattrapageStatusBadge } from "@/components/rattrapage/RattrapageStatusBadge";
 import { RattrapageForm } from "@/components/rattrapage/RattrapageForm";
 import { formatDate, formatTime } from "@/utils/dateUtils";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 export default function TeacherRattrapagesPage() {
   const { data: session, status } = useSession();
@@ -169,26 +170,21 @@ export default function TeacherRattrapagesPage() {
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-[1200px] mx-auto">
-      {/* Header */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Mes Rattrapages</h1>
-          <p className="text-sm text-slate-500">Proposez des séances de rattrapage et suivez leur état de validation.</p>
-        </div>
-        <Button onClick={fetchData} variant="outline" className="self-start md:self-auto gap-2">
-          <RefreshCw size={16} />
-          <span>Actualiser</span>
-        </Button>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader
+        title="Mes Rattrapages"
+        subtitle="Proposez des séances de rattrapage et suivez leur état de validation."
+        onRefresh={fetchData}
+        refreshing={isLoading}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="flex justify-between items-center border-b border-slate-100 pb-2">
           <TabsList className="bg-slate-50 border border-slate-200">
-            <TabsTrigger value="list" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="list" className="data-[state=active]:bg-white data-[state=active]:shadow-sm font-poppins">
               Mes Propositions
             </TabsTrigger>
-            <TabsTrigger value="propose" className="data-[state=active]:bg-white data-[state=active]:shadow-sm gap-1.5">
+            <TabsTrigger value="propose" className="data-[state=active]:bg-white data-[state=active]:shadow-sm gap-1.5 font-poppins">
               <span>Proposer un rattrapage</span>
             </TabsTrigger>
           </TabsList>
@@ -196,7 +192,7 @@ export default function TeacherRattrapagesPage() {
 
         {/* Tab 1: List of teacher's makeups */}
         <TabsContent value="list" className="space-y-4">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border-none shadow-sm hover:shadow-md transition-shadow overflow-hidden">
             {rattrapages.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-4">
                 <AlertCircle className="h-10 w-10 text-slate-400 mb-2" />

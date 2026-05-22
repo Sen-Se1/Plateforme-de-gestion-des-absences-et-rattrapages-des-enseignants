@@ -56,6 +56,7 @@ import { AbsenceStatusBadge } from "@/components/absence/AbsenceStatusBadge";
 import { AbsenceDetailsDialog } from "@/components/absence/AbsenceDetailsDialog";
 import { AbsenceForm } from "@/components/absence/AbsenceForm";
 import { formatDate } from "@/utils/dateUtils";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 function TeacherAbsencesPageContent() {
   const { data: session, status } = useSession();
@@ -216,24 +217,15 @@ function TeacherAbsencesPageContent() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            Gestion de mes absences
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Déclarez vos absences et suivez les demandes d'autorisation de rattrapage.
-          </p>
-        </div>
-        <Button onClick={fetchAbsenceHistory} variant="outline" className="gap-2">
-          <RefreshCw size={14} className={isHistoryLoading ? "animate-spin" : ""} />
-          Actualiser
-        </Button>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader
+        title="Gestion de mes Absences"
+        subtitle="Déclarez vos absences et suivez les demandes d'autorisation de rattrapage."
+        onRefresh={fetchAbsenceHistory}
+        refreshing={isHistoryLoading}
+      />
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-6">
+      <div className="bg-white p-6 rounded-xl border-none shadow-sm hover:shadow-md transition-shadow space-y-6">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="bg-slate-100 p-1 rounded-lg border-b border-slate-100 pb-4 mb-4 flex justify-start">
             <TabsTrigger value="list" className="px-4 py-1.5 text-sm rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm flex items-center gap-2">

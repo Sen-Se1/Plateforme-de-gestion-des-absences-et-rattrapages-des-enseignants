@@ -1,4 +1,5 @@
 import ProfileForm from "@/components/dashboard/ProfileForm";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 export const metadata = {
   title: "Mon Profil | AbsenceFlow",
@@ -7,13 +8,11 @@ export const metadata = {
 
 export default function ProfilePage() {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Mon Profil</h1>
-        <p className="text-slate-500 mt-2">
-          Gérez vos informations personnelles et vos paramètres de sécurité.
-        </p>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader 
+        title="Mon Profil" 
+        subtitle="Gérez vos informations personnelles et vos paramètres de sécurité." 
+      />
 
       <div className="max-w-4xl">
         <ProfileForm />
@@ -21,3 +20,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

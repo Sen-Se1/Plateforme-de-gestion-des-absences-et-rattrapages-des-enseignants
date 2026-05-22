@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, RefreshCw, UserRound, BookOpen, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 export default function TeacherTimetablePage() {
   const { data: session } = useSession();
@@ -82,23 +83,16 @@ export default function TeacherTimetablePage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Mon Emploi du Temps</h1>
-            <p className="text-slate-500 mt-1">Consultez votre planning global ou filtrez par matière enseignée.</p>
-          </div>
-        </div>
-        <Button onClick={loadTimetable} variant="outline" size="sm" className="gap-2 bg-white border-slate-200">
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          Actualiser
-        </Button>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader
+        title="Mon Emploi du Temps"
+        subtitle="Consultez votre planning global ou filtrez par matière enseignée."
+        onRefresh={loadTimetable}
+        refreshing={loading}
+      />
 
       {/* Unified Tab Container Card */}
-      <Card className="border-none shadow-sm bg-white overflow-hidden">
+      <Card className="border-none shadow-sm hover:shadow-md transition-shadow bg-white overflow-hidden rounded-xl">
         <div className="border-b border-slate-100 bg-slate-50/50 px-4 py-4 sm:px-6">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

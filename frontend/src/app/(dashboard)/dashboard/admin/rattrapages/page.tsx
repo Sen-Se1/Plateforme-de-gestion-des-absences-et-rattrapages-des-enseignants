@@ -55,6 +55,7 @@ import { RattrapageStatusBadge } from "@/components/rattrapage/RattrapageStatusB
 import { RattrapageDetailsDialog } from "@/components/rattrapage/RattrapageDetailsDialog";
 import { ChangeRoomDialog } from "@/components/rattrapage/ChangeRoomDialog";
 import { formatDate, formatTime } from "@/utils/dateUtils";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 export default function AdminRattrapagesPage() {
   const { data: session, status } = useSession();
@@ -173,22 +174,17 @@ export default function AdminRattrapagesPage() {
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-[1600px] mx-auto">
-      {/* Header */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Suivi des Rattrapages</h1>
-          <p className="text-sm text-slate-500">Gérez, validez et affectez des salles aux séances de rattrapage proposées.</p>
-        </div>
-        <Button onClick={fetchRattrapages} variant="outline" className="self-start md:self-auto gap-2">
-          <RefreshCw size={16} />
-          <span>Actualiser</span>
-        </Button>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader
+        title="Suivi des Rattrapages"
+        subtitle="Gérez, validez et affectez des salles aux séances de rattrapage proposées."
+        onRefresh={fetchRattrapages}
+        refreshing={isLoading}
+      />
 
       {/* Filters Card */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Filtres de recherche</h2>
+      <div className="bg-white p-6 rounded-xl border-none shadow-sm hover:shadow-md transition-shadow space-y-4">
+        <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider font-poppins">Filtres de recherche</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
             <Label htmlFor="statusFilter">Statut</Label>
@@ -240,7 +236,7 @@ export default function AdminRattrapagesPage() {
       </div>
 
       {/* Main Table */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border-none shadow-sm hover:shadow-md transition-shadow overflow-hidden">
         {rattrapages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">
             <AlertCircle className="h-10 w-10 text-slate-400 mb-2" />

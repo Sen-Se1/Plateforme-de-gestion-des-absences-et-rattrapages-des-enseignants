@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import {
   getAbsences,
   getPendingAbsences,
@@ -166,24 +167,15 @@ export default function AdminAbsencesPage() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            Suivi des absences
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Visualisez et validez les déclarations d'absence faites par les enseignants.
-          </p>
-        </div>
-        <Button onClick={fetchAbsences} variant="outline" className="gap-2">
-          <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
-          Actualiser
-        </Button>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader
+        title="Suivi des Absences"
+        subtitle="Visualisez et validez les déclarations d'absence faites par les enseignants."
+        onRefresh={fetchAbsences}
+        refreshing={isLoading}
+      />
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-6">
+      <div className="bg-white p-6 rounded-xl border-none shadow-sm hover:shadow-md transition-shadow space-y-6">
         {/* Tabs Control */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-4 mb-4">

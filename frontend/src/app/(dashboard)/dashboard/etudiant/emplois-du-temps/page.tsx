@@ -8,6 +8,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ErrorMessage } from "@/components/ui/error-message";
 import { Calendar, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 export default function StudentTimetablePage() {
   const [courses, setCourses] = useState<EmploiDuTempsResponse[]>([]);
@@ -35,22 +36,13 @@ export default function StudentTimetablePage() {
   if (error) return <ErrorMessage message={error} onRetry={loadTimetable} />;
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Mon Emploi du Temps</h1>
-            <p className="text-slate-500 mt-1">Consultez votre planning hebdomadaire de cours et exportez-le en PDF.</p>
-          </div>
-        </div>
-        <Button onClick={loadTimetable} variant="outline" size="sm" className="gap-2 bg-white border-slate-200">
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          Actualiser
-        </Button>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader
+        title="Mon Emploi du Temps"
+        subtitle="Consultez votre planning hebdomadaire de cours et exportez-le en PDF."
+        onRefresh={loadTimetable}
+        refreshing={loading}
+      />
 
       {/* Timetable Grid Card */}
       <WeeklyTimetable

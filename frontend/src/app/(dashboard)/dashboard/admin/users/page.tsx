@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { 
   getUsers, 
   createUser, 
@@ -213,16 +214,13 @@ export default function UsersManagementPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestion des Utilisateurs</h1>
-          <p className="text-muted-foreground mt-1">
-            Gérez les comptes, les rôles et les accès à la plateforme.
-          </p>
-        </div>
+    <div className="space-y-8 max-w-7xl mx-auto px-1">
+      <DashboardHeader 
+        title="Gestion des Utilisateurs" 
+        subtitle="Gérez les comptes, les rôles et les accès à la plateforme."
+      >
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger render={<Button onClick={openCreateDialog} className="gap-2" />}>
+          <DialogTrigger render={<Button onClick={openCreateDialog} className="gap-2 shadow-sm font-poppins" />}>
             <Plus className="h-4 w-4" />
             Nouvel Utilisateur
           </DialogTrigger>
@@ -239,21 +237,21 @@ export default function UsersManagementPage() {
             />
           </DialogContent>
         </Dialog>
-      </div>
+      </DashboardHeader>
 
-      <div className="flex flex-col md:flex-row gap-4 bg-card p-4 rounded-xl border">
+      <div className="flex flex-col md:flex-row gap-4 bg-white p-6 rounded-xl border-none shadow-sm">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Rechercher par nom, prénom ou email..."
-            className="pl-9"
+            className="pl-9 bg-slate-50 border-slate-200/80"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex flex-col sm:flex-row gap-4">
           <Select value={roleFilter} onValueChange={handleRoleChange}>
-            <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectTrigger className="w-full sm:w-[200px] bg-slate-50 border-slate-200/80">
               <SelectValue placeholder="Rôle" />
             </SelectTrigger>
             <SelectContent>
@@ -266,7 +264,7 @@ export default function UsersManagementPage() {
           </Select>
 
           <Select value={statusFilter} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-full sm:w-[150px]">
+            <SelectTrigger className="w-full sm:w-[150px] bg-slate-50 border-slate-200/80">
               <SelectValue placeholder="Statut" />
             </SelectTrigger>
             <SelectContent>
@@ -278,7 +276,7 @@ export default function UsersManagementPage() {
         </div>
       </div>
 
-      <div className="bg-card border rounded-xl overflow-hidden">
+      <div className="bg-white border-none shadow-sm rounded-xl overflow-hidden">
         {isLoading ? (
           <div className="p-8 flex justify-center">
             <LoadingSpinner />
