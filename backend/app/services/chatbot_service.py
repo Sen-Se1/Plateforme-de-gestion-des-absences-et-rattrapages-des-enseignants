@@ -172,6 +172,102 @@ TOOLS = [
                 "required": ["date_proposee", "heure_debut", "heure_fin", "salle_nom"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "update_my_profile",
+            "description": "Met à jour les informations de profil de l'utilisateur connecté (nom, prénom, email, mot de passe). Cette action nécessite une confirmation.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "nom": {
+                        "type": "string",
+                        "description": "Nouveau nom de famille"
+                    },
+                    "prenom": {
+                        "type": "string",
+                        "description": "Nouveau prénom"
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "Nouvelle adresse email"
+                    },
+                    "mot_de_passe": {
+                        "type": "string",
+                        "description": "Nouveau mot de passe (min 6 caractères)"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "annuler_rattrapage",
+            "description": "Annule une séance de rattrapage programmée ou proposée. Action disponible pour l'enseignant concerné ou l'administration. Nécessite une confirmation.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "rattrapage_id": {
+                        "type": "integer",
+                        "description": "Identifiant unique du rattrapage à annuler."
+                    }
+                },
+                "required": ["rattrapage_id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "valider_absence",
+            "description": "Valide une absence déclarée par un enseignant. Cette action est réservée exclusivement aux Administrateurs et nécessite une confirmation.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "absence_id": {
+                        "type": "integer",
+                        "description": "Identifiant unique de l'absence à valider."
+                    }
+                },
+                "required": ["absence_id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "rejeter_absence",
+            "description": "Rejette une absence déclarée par un enseignant. Cette action est réservée exclusivement aux Administrateurs et nécessite une confirmation.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "absence_id": {
+                        "type": "integer",
+                        "description": "Identifiant unique de l'absence à rejeter."
+                    }
+                },
+                "required": ["absence_id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "valider_rattrapage",
+            "description": "Valide une proposition de rattrapage. Cette action est réservée exclusivement aux Administrateurs et nécessite une confirmation.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "rattrapage_id": {
+                        "type": "integer",
+                        "description": "Identifiant unique du rattrapage à valider."
+                    }
+                },
+                "required": ["rattrapage_id"]
+            }
+        }
     }
 ]
 
@@ -195,13 +291,15 @@ class ChatbotService:
             f"Règles importantes :\n"
             f"1. Reste poli, clair et concis. Réponds en français.\n"
             f"2. Utilise les outils/fonctions mis à ta disposition pour interroger la base de données ou initier des actions.\n"
-            f"3. Si l'utilisateur demande une action d'écriture (comme déclarer une absence ou proposer un rattrapage), appelle la fonction correspondante (declare_absence ou propose_rattrapage). Le backend l'interceptera, validera les paramètres, et te retournera un état demandant confirmation ou affichera une erreur. Tu n'as pas besoin de dire que tu l'as déjà fait, appelle juste l'outil.\n"
-            f"4. Ne propose que des actions adaptées au rôle de l'utilisateur :\n"
-            f"   - Déclarer absence et proposer rattrapage sont exclusivement pour les ENSEIGNANTS.\n"
-            f"   - Un étudiant peut demander ses cours, ses rattrapages prévus, et les absences de ses enseignants.\n"
-            f"   - Un administrateur peut voir toutes les absences et tous les rattrapages.\n"
-            f"5. Si des informations requises pour appeler un outil sont manquantes (ex: la matière ou le motif de l'absence), demande poliment ces précisions à l'utilisateur au lieu d'appeler l'outil avec des valeurs fictives.\n"
-            f"6. Ne génère JAMAIS de texte au format XML ou HTML contenant des balises comme <function> ou </function> pour appeler les outils. Utilise exclusivement l'appel d'outil natif de l'API de manière transparente.\n"
+            f"3. Pour toute action d'écriture, appelle l'outil correspondant — le backend demandera toujours une confirmation à l'utilisateur avant d'exécuter. Tu n'as pas besoin de répéter que tu as appelé l'outil.\n"
+            f"4. Actions disponibles selon le rôle :\n"
+            f"   - TOUS LES RÔLES : update_my_profile (mettre à jour son propre profil : nom, prénom, email, mot de passe)\n"
+            f"   - ENSEIGNANT : declare_absence (déclarer une absence), propose_rattrapage (proposer un rattrapage), annuler_rattrapage (annuler son propre rattrapage)\n"
+            f"   - ADMINISTRATEUR : valider_absence, rejeter_absence, valider_rattrapage, annuler_rattrapage (pour n'importe quel rattrapage)\n"
+            f"   - ÉTUDIANT : peut interroger ses cours, rattrapages prévus et absences de ses enseignants (lecture seule)\n"
+            f"5. Si des informations requises sont manquantes (ex: la matière, l'ID d'une absence), demande poliment ces précisions à l'utilisateur.\n"
+            f"6. Ne génère JAMAIS de texte au format XML ou HTML avec des balises comme <function> pour appeler les outils. Utilise exclusivement l'appel d'outil natif de l'API.\n"
+            f"7. Ne propose JAMAIS une action non autorisée pour le rôle en cours. Si quelqu'un demande une action réservée à un autre rôle, explique-le poliment.\n"
         )
         return prompt
 
@@ -366,14 +464,196 @@ class ChatbotService:
         If invalid, returns a plain text payload:
             { "type": "text", "content": "Error message explaining why the action is invalid" }
         """
-        if user.role != RoleUtilisateur.ENSEIGNANT:
-            return {
-                "type": "text",
-                "content": "Désolé, seules les personnes avec le rôle Enseignant peuvent effectuer cette action."
-            }
-
         try:
-            if name == "declare_absence":
+            # ── Profile Update (all roles) ──────────────────────────────────────
+            if name == "update_my_profile":
+                nom = args.get("nom")
+                prenom = args.get("prenom")
+                email = args.get("email")
+                mot_de_passe = args.get("mot_de_passe")
+
+                if not any([nom, prenom, email, mot_de_passe]):
+                    return {
+                        "type": "text",
+                        "content": "Veuillez préciser au moins un champ à modifier : nom, prénom, email ou mot de passe."
+                    }
+
+                # Build summary of what will change
+                changes = []
+                if nom:
+                    changes.append(f"Nom : **{nom}**")
+                if prenom:
+                    changes.append(f"Prénom : **{prenom}**")
+                if email:
+                    # Simple email format check
+                    if "@" not in email or "." not in email:
+                        return {"type": "text", "content": "L'adresse email fournie semble invalide. Veuillez vérifier."}
+                    changes.append(f"Email : **{email}**")
+                if mot_de_passe:
+                    if len(mot_de_passe) < 6:
+                        return {"type": "text", "content": "Le mot de passe doit comporter au minimum 6 caractères."}
+                    changes.append("Mot de passe : **••••••** (nouveau)")
+
+                changes_text = "\n".join([f"- {c}" for c in changes])
+                params = {}
+                if nom: params["nom"] = nom
+                if prenom: params["prenom"] = prenom
+                if email: params["email"] = email
+                if mot_de_passe: params["mot_de_passe"] = mot_de_passe
+
+                return {
+                    "type": "confirmation",
+                    "content": f"Confirmez-vous la mise à jour de votre profil avec les informations suivantes ?\n{changes_text}",
+                    "action_data": {
+                        "action": "update_my_profile",
+                        "params": params
+                    }
+                }
+
+            # ── Cancel Rattrapage (teacher = own, admin = any) ──────────────────
+            elif name == "annuler_rattrapage":
+                rattrapage_id = int(args["rattrapage_id"])
+                is_admin = user.role in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]
+                is_teacher = user.role == RoleUtilisateur.ENSEIGNANT
+
+                if not is_admin and not is_teacher:
+                    return {"type": "text", "content": "Seuls les enseignants et les administrateurs peuvent annuler un rattrapage."}
+
+                rattrapage = db.query(Rattrapage).options(
+                    joinedload(Rattrapage.absence).joinedload(Absence.matiere),
+                    joinedload(Rattrapage.absence).joinedload(Absence.enseignant),
+                    joinedload(Rattrapage.salle)
+                ).filter(Rattrapage.id == rattrapage_id).first()
+
+                if not rattrapage:
+                    return {"type": "text", "content": f"Aucun rattrapage trouvé avec l'ID {rattrapage_id}."}
+
+                # Teacher can only cancel their own
+                if is_teacher and rattrapage.absence.enseignant_id != user.id:
+                    return {"type": "text", "content": "Vous ne pouvez annuler que vos propres rattrapages."}
+
+                if rattrapage.statut == StatutRattrapage.ANNULE:
+                    return {"type": "text", "content": f"Le rattrapage ID {rattrapage_id} est déjà annulé."}
+
+                matiere_nom = rattrapage.absence.matiere.nom if rattrapage.absence and rattrapage.absence.matiere else "?"
+                date_fr = rattrapage.date_proposee.strftime("%d/%m/%Y")
+                salle_nom = rattrapage.salle.nom if rattrapage.salle else "?"
+
+                return {
+                    "type": "confirmation",
+                    "content": f"Confirmez-vous l'annulation du rattrapage de **{matiere_nom}** prévu le **{date_fr}** en salle **{salle_nom}** (ID {rattrapage_id}) ?",
+                    "action_data": {
+                        "action": "annuler_rattrapage",
+                        "params": {"rattrapage_id": rattrapage_id}
+                    }
+                }
+
+            # ── Validate Absence (admin only) ───────────────────────────────────
+            elif name == "valider_absence":
+                if user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
+                    return {"type": "text", "content": "Seuls les administrateurs peuvent valider une absence."}
+
+                absence_id = int(args["absence_id"])
+                absence = db.query(Absence).options(
+                    joinedload(Absence.enseignant),
+                    joinedload(Absence.matiere)
+                ).filter(Absence.id == absence_id).first()
+
+                if not absence:
+                    return {"type": "text", "content": f"Aucune absence trouvée avec l'ID {absence_id}."}
+
+                if absence.statut == StatutAbsence.VALIDE:
+                    return {"type": "text", "content": f"L'absence ID {absence_id} est déjà validée."}
+
+                if absence.statut == StatutAbsence.REJETE:
+                    return {"type": "text", "content": f"L'absence ID {absence_id} a été rejetée, elle ne peut plus être validée."}
+
+                enseignant_nom = f"{absence.enseignant.prenom} {absence.enseignant.nom}" if absence.enseignant else "?"
+                matiere_nom = absence.matiere.nom if absence.matiere else "?"
+                date_fr = absence.date_absence.strftime("%d/%m/%Y")
+
+                return {
+                    "type": "confirmation",
+                    "content": f"Confirmez-vous la **validation** de l'absence de **{enseignant_nom}** pour le cours de **{matiere_nom}** le **{date_fr}** (ID {absence_id}) ?",
+                    "action_data": {
+                        "action": "valider_absence",
+                        "params": {"absence_id": absence_id}
+                    }
+                }
+
+            # ── Reject Absence (admin only) ─────────────────────────────────────
+            elif name == "rejeter_absence":
+                if user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
+                    return {"type": "text", "content": "Seuls les administrateurs peuvent rejeter une absence."}
+
+                absence_id = int(args["absence_id"])
+                absence = db.query(Absence).options(
+                    joinedload(Absence.enseignant),
+                    joinedload(Absence.matiere)
+                ).filter(Absence.id == absence_id).first()
+
+                if not absence:
+                    return {"type": "text", "content": f"Aucune absence trouvée avec l'ID {absence_id}."}
+
+                if absence.statut == StatutAbsence.REJETE:
+                    return {"type": "text", "content": f"L'absence ID {absence_id} est déjà rejetée."}
+
+                enseignant_nom = f"{absence.enseignant.prenom} {absence.enseignant.nom}" if absence.enseignant else "?"
+                matiere_nom = absence.matiere.nom if absence.matiere else "?"
+                date_fr = absence.date_absence.strftime("%d/%m/%Y")
+
+                return {
+                    "type": "confirmation",
+                    "content": f"Confirmez-vous le **rejet** de l'absence de **{enseignant_nom}** pour le cours de **{matiere_nom}** le **{date_fr}** (ID {absence_id}) ?",
+                    "action_data": {
+                        "action": "rejeter_absence",
+                        "params": {"absence_id": absence_id}
+                    }
+                }
+
+            # ── Validate Rattrapage (admin only) ────────────────────────────────
+            elif name == "valider_rattrapage":
+                if user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
+                    return {"type": "text", "content": "Seuls les administrateurs peuvent valider un rattrapage."}
+
+                rattrapage_id = int(args["rattrapage_id"])
+                rattrapage = db.query(Rattrapage).options(
+                    joinedload(Rattrapage.absence).joinedload(Absence.enseignant),
+                    joinedload(Rattrapage.absence).joinedload(Absence.matiere),
+                    joinedload(Rattrapage.salle)
+                ).filter(Rattrapage.id == rattrapage_id).first()
+
+                if not rattrapage:
+                    return {"type": "text", "content": f"Aucun rattrapage trouvé avec l'ID {rattrapage_id}."}
+
+                if rattrapage.statut == StatutRattrapage.VALIDE:
+                    return {"type": "text", "content": f"Le rattrapage ID {rattrapage_id} est déjà validé."}
+
+                if rattrapage.statut == StatutRattrapage.ANNULE:
+                    return {"type": "text", "content": f"Le rattrapage ID {rattrapage_id} est annulé, il ne peut pas être validé."}
+
+                enseignant_nom = f"{rattrapage.absence.enseignant.prenom} {rattrapage.absence.enseignant.nom}" if rattrapage.absence and rattrapage.absence.enseignant else "?"
+                matiere_nom = rattrapage.absence.matiere.nom if rattrapage.absence and rattrapage.absence.matiere else "?"
+                date_fr = rattrapage.date_proposee.strftime("%d/%m/%Y")
+                heure_debut = rattrapage.heure_debut.strftime("%H:%M")
+                heure_fin = rattrapage.heure_fin.strftime("%H:%M")
+                salle_nom = rattrapage.salle.nom if rattrapage.salle else "?"
+
+                return {
+                    "type": "confirmation",
+                    "content": (
+                        f"Confirmez-vous la **validation** du rattrapage de **{enseignant_nom}** "
+                        f"pour **{matiere_nom}** prévu le **{date_fr}** de **{heure_debut}** à **{heure_fin}** "
+                        f"en salle **{salle_nom}** (ID {rattrapage_id}) ?"
+                    ),
+                    "action_data": {
+                        "action": "valider_rattrapage",
+                        "params": {"rattrapage_id": rattrapage_id}
+                    }
+                }
+
+            # ── Enseignant-only actions ──────────────────────────────────────────
+            elif name == "declare_absence":
                 matiere_nom = args["matiere_nom"]
                 date_absence_str = args["date"]
                 motif = args["motif"]
@@ -583,17 +863,31 @@ class ChatbotService:
         """
         Executes a write/action database transaction once the user confirms from the UI.
         """
-        if user.role != RoleUtilisateur.ENSEIGNANT:
-            return {"success": False, "message": "Rôle non autorisé."}
+        from app.services.utilisateur_service import UtilisateurService
+        from app.schemas.utilisateur import UtilisateurUpdate
 
         try:
-            if action == "declare_absence":
+            # ── Profile update (all roles) ──────────────────────────────────────
+            if action == "update_my_profile":
+                update_data = UtilisateurUpdate(**{k: v for k, v in params.items() if v is not None})
+                updated = UtilisateurService.update(db, user.id, update_data)
+                if not updated:
+                    return {"success": False, "message": "Utilisateur non trouvé."}
+                return {
+                    "success": True,
+                    "message": "Votre profil a été mis à jour avec succès ! Les changements sont effectifs immédiatement."
+                }
+
+            # ── Declare absence (teacher only) ──────────────────────────────────
+            elif action == "declare_absence":
+                if user.role != RoleUtilisateur.ENSEIGNANT:
+                    return {"success": False, "message": "Seuls les enseignants peuvent déclarer une absence."}
                 matiere_id = params["matiere_id"]
                 date_absence = date.fromisoformat(params["date_absence"])
                 motif = params["motif"]
                 justificatif_path = params.get("justificatif_path")
 
-                absence = AbsenceService.declare_absence(
+                AbsenceService.declare_absence(
                     db=db,
                     enseignant_id=user.id,
                     matiere_id=matiere_id,
@@ -603,10 +897,13 @@ class ChatbotService:
                 )
                 return {
                     "success": True,
-                    "message": f"Votre absence pour le cours du {date_absence.strftime('%d/%m/%Y')} a été déclarée avec succès et est en attente de validation."
+                    "message": f"✅ Votre absence pour le cours du {date_absence.strftime('%d/%m/%Y')} a été déclarée avec succès et est **en attente de validation** par l'administration."
                 }
 
+            # ── Propose rattrapage (teacher only) ───────────────────────────────
             elif action == "propose_rattrapage":
+                if user.role != RoleUtilisateur.ENSEIGNANT:
+                    return {"success": False, "message": "Seuls les enseignants peuvent proposer un rattrapage."}
                 data_in = RattrapageCreate(
                     absence_id=params["absence_id"],
                     date_proposee=date.fromisoformat(params["date_proposee"]),
@@ -614,11 +911,52 @@ class ChatbotService:
                     heure_fin=time.fromisoformat(params["heure_fin"]),
                     salle_id=params["salle_id"]
                 )
-                
-                rattrapage = RattrapageService.create(db=db, data=data_in, current_user_id=user.id)
+                RattrapageService.create(db=db, data=data_in, current_user_id=user.id)
                 return {
                     "success": True,
-                    "message": f"Le rattrapage a été proposé avec succès pour le {data_in.date_proposee.strftime('%d/%m/%Y')}."
+                    "message": f"✅ Le rattrapage a été **proposé avec succès** pour le {data_in.date_proposee.strftime('%d/%m/%Y')} et est en attente de validation."
+                }
+
+            # ── Cancel rattrapage (teacher = own, admin = any) ──────────────────
+            elif action == "annuler_rattrapage":
+                rattrapage_id = int(params["rattrapage_id"])
+                RattrapageService.annuler(db, rattrapage_id, user.id, user.role)
+                return {
+                    "success": True,
+                    "message": f"✅ Le rattrapage ID {rattrapage_id} a été **annulé avec succès**."
+                }
+
+            # ── Validate absence (admin only) ────────────────────────────────────
+            elif action == "valider_absence":
+                if user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
+                    return {"success": False, "message": "Seuls les administrateurs peuvent valider une absence."}
+                absence_id = int(params["absence_id"])
+                AbsenceService.set_statut(db, absence_id, StatutAbsence.VALIDE)
+                return {
+                    "success": True,
+                    "message": f"✅ L'absence ID {absence_id} a été **validée avec succès**. L'enseignant a été notifié."
+                }
+
+            # ── Reject absence (admin only) ──────────────────────────────────────
+            elif action == "rejeter_absence":
+                if user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
+                    return {"success": False, "message": "Seuls les administrateurs peuvent rejeter une absence."}
+                absence_id = int(params["absence_id"])
+                AbsenceService.set_statut(db, absence_id, StatutAbsence.REJETE)
+                return {
+                    "success": True,
+                    "message": f"✅ L'absence ID {absence_id} a été **rejetée**. L'enseignant a été notifié."
+                }
+
+            # ── Validate rattrapage (admin only) ─────────────────────────────────
+            elif action == "valider_rattrapage":
+                if user.role not in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]:
+                    return {"success": False, "message": "Seuls les administrateurs peuvent valider un rattrapage."}
+                rattrapage_id = int(params["rattrapage_id"])
+                RattrapageService.validate(db, rattrapage_id, user.id)
+                return {
+                    "success": True,
+                    "message": f"✅ Le rattrapage ID {rattrapage_id} a été **validé avec succès**. L'enseignant et les étudiants concernés ont été notifiés."
                 }
 
         except Exception as e:
@@ -676,7 +1014,12 @@ class ChatbotService:
             args = json.loads(tool_call.function.arguments)
 
             # Check if it is an action or a query
-            if name in ["declare_absence", "propose_rattrapage"]:
+            ACTION_TOOLS = [
+                "declare_absence", "propose_rattrapage",
+                "update_my_profile", "annuler_rattrapage",
+                "valider_absence", "rejeter_absence", "valider_rattrapage"
+            ]
+            if name in ACTION_TOOLS:
                 # Action -> returns validation / confirmation request
                 return ChatbotService.validate_action_tool(db, user, name, args)
             else:
