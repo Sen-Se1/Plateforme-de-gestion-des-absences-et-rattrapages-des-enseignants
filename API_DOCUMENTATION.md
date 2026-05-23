@@ -18,6 +18,230 @@
 
 ---
 
+## Schéma de la base de données
+
+> **Base de données :** PostgreSQL  
+> **ORM :** SQLAlchemy (Python)  
+> **SGBD URL :** `postgresql://postgres:<password>@localhost:5432/gestion_absences`
+
+---
+
+### Table : `utilisateurs`
+
+| Colonne | Type SQLAlchemy | Type SQL | Contraintes |
+|---|---|---|---|
+| `id` | `Integer` | `SERIAL` | `PRIMARY KEY`, `INDEX` |
+| `nom` | `String(100)` | `VARCHAR(100)` | `NOT NULL` |
+| `prenom` | `String(100)` | `VARCHAR(100)` | `NOT NULL` |
+| `email` | `String(150)` | `VARCHAR(150)` | `NOT NULL`, `UNIQUE`, `INDEX` |
+| `mot_de_passe` | `String(255)` | `VARCHAR(255)` | `NOT NULL` |
+| `role` | `Enum(RoleUtilisateur)` | `ENUM` | `NOT NULL` — valeurs : `admin_systeme`, `administration`, `enseignant`, `etudiant` |
+| `actif` | `Boolean` | `BOOLEAN` | `DEFAULT TRUE` |
+| `created_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()` |
+| `updated_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()`, mis à jour automatiquement |
+
+**Relations :**
+- `matieres_enseignees` → `matieres` (1→N)
+- `absences` → `absences` (1→N, cascade delete)
+- `rattrapages_valides` → `rattrapages` (1→N)
+- `groupes` → `etudiants_groupes` → `groupes` (N→N via table de liaison)
+- `notifications` → `notifications` (1→N, cascade delete)
+
+---
+
+### Table : `departements`
+
+| Colonne | Type SQLAlchemy | Type SQL | Contraintes |
+|---|---|---|---|
+| `id` | `Integer` | `SERIAL` | `PRIMARY KEY`, `INDEX` |
+| `nom` | `String(100)` | `VARCHAR(100)` | `NOT NULL` |
+| `created_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()` |
+| `updated_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()`, mis à jour automatiquement |
+
+**Relations :**
+- `groupes` → `groupes` (1→N, cascade delete)
+- `matieres` → `matieres` (1→N, cascade delete)
+
+---
+
+### Table : `groupes`
+
+| Colonne | Type SQLAlchemy | Type SQL | Contraintes |
+|---|---|---|---|
+| `id` | `Integer` | `SERIAL` | `PRIMARY KEY`, `INDEX` |
+| `nom` | `String(100)` | `VARCHAR(100)` | `NOT NULL` |
+| `departement_id` | `Integer` | `INTEGER` | `NOT NULL`, `FK → departements(id) ON DELETE CASCADE` |
+| `created_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()` |
+| `updated_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()`, mis à jour automatiquement |
+
+**Relations :**
+- `departement` → `departements` (N→1)
+- `etudiants` → `utilisateurs` (N→N via `etudiants_groupes`)
+- `emplois_du_temps` → `emplois_du_temps` (1→N, cascade delete)
+
+---
+
+### Table : `matieres`
+
+| Colonne | Type SQLAlchemy | Type SQL | Contraintes |
+|---|---|---|---|
+| `id` | `Integer` | `SERIAL` | `PRIMARY KEY`, `INDEX` |
+| `nom` | `String(100)` | `VARCHAR(100)` | `NOT NULL` |
+| `departement_id` | `Integer` | `INTEGER` | `NOT NULL`, `FK → departements(id) ON DELETE CASCADE` |
+| `enseignant_id` | `Integer` | `INTEGER` | `NULLABLE`, `FK → utilisateurs(id) ON DELETE SET NULL` |
+| `created_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()` |
+| `updated_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()`, mis à jour automatiquement |
+
+**Relations :**
+- `departement` → `departements` (N→1)
+- `enseignant` → `utilisateurs` (N→1, nullable)
+- `absences` → `absences` (1→N, cascade delete)
+- `emplois_du_temps` → `emplois_du_temps` (1→N, cascade delete)
+
+---
+
+### Table : `salles`
+
+| Colonne | Type SQLAlchemy | Type SQL | Contraintes |
+|---|---|---|---|
+| `id` | `Integer` | `SERIAL` | `PRIMARY KEY`, `INDEX` |
+| `nom` | `String(50)` | `VARCHAR(50)` | `NOT NULL` |
+| `capacite` | `Integer` | `INTEGER` | `NOT NULL` |
+| `created_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()` |
+| `updated_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()`, mis à jour automatiquement |
+
+**Relations :**
+- `rattrapages` → `rattrapages` (1→N, cascade delete)
+- `emplois_du_temps` → `emplois_du_temps` (1→N, cascade delete)
+
+---
+
+### Table : `absences`
+
+| Colonne | Type SQLAlchemy | Type SQL | Contraintes |
+|---|---|---|---|
+| `id` | `Integer` | `SERIAL` | `PRIMARY KEY`, `INDEX` |
+| `enseignant_id` | `Integer` | `INTEGER` | `NOT NULL`, `FK → utilisateurs(id) ON DELETE CASCADE` |
+| `matiere_id` | `Integer` | `INTEGER` | `NOT NULL`, `FK → matieres(id) ON DELETE CASCADE` |
+| `date_absence` | `Date` | `DATE` | `NOT NULL` |
+| `motif` | `Text` | `TEXT` | `NOT NULL` |
+| `justificatif` | `String(255)` | `VARCHAR(255)` | `NULLABLE` — chemin fichier justificatif |
+| `statut` | `Enum(StatutAbsence)` | `ENUM` | `NOT NULL`, `DEFAULT 'en_attente'` — valeurs : `en_attente`, `valide`, `rejete` |
+| `created_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()` |
+| `updated_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()`, mis à jour automatiquement |
+
+**Relations :**
+- `enseignant` → `utilisateurs` (N→1)
+- `matiere` → `matieres` (N→1)
+- `rattrapages` → `rattrapages` (1→N, cascade delete)
+
+---
+
+### Table : `rattrapages`
+
+| Colonne | Type SQLAlchemy | Type SQL | Contraintes |
+|---|---|---|---|
+| `id` | `Integer` | `SERIAL` | `PRIMARY KEY`, `INDEX` |
+| `absence_id` | `Integer` | `INTEGER` | `NOT NULL`, `FK → absences(id) ON DELETE CASCADE` |
+| `salle_id` | `Integer` | `INTEGER` | `NOT NULL`, `FK → salles(id) ON DELETE CASCADE` |
+| `date_proposee` | `Date` | `DATE` | `NOT NULL` |
+| `heure_debut` | `Time` | `TIME` | `NOT NULL` |
+| `heure_fin` | `Time` | `TIME` | `NOT NULL` |
+| `statut` | `Enum(StatutRattrapage)` | `ENUM` | `NOT NULL`, `DEFAULT 'propose'` — valeurs : `propose`, `valide`, `annule` |
+| `valide_par` | `Integer` | `INTEGER` | `NULLABLE`, `FK → utilisateurs(id) ON DELETE SET NULL` |
+| `created_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()` |
+| `updated_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()`, mis à jour automatiquement |
+
+**Relations :**
+- `absence` → `absences` (N→1)
+- `salle` → `salles` (N→1)
+- `validateur` → `utilisateurs` (N→1, nullable)
+- `emplois_du_temps` → `emplois_du_temps` (1→N, cascade delete)
+
+---
+
+### Table : `emplois_du_temps`
+
+| Colonne | Type SQLAlchemy | Type SQL | Contraintes |
+|---|---|---|---|
+| `id` | `Integer` | `SERIAL` | `PRIMARY KEY`, `INDEX` |
+| `groupe_id` | `Integer` | `INTEGER` | `NOT NULL`, `FK → groupes(id) ON DELETE CASCADE` |
+| `matiere_id` | `Integer` | `INTEGER` | `NOT NULL`, `FK → matieres(id) ON DELETE CASCADE` |
+| `salle_id` | `Integer` | `INTEGER` | `NOT NULL`, `FK → salles(id) ON DELETE CASCADE` |
+| `jour_semaine` | `Integer` | `INTEGER` | `NOT NULL` — `0=Lundi, 1=Mardi, 2=Mercredi, 3=Jeudi, 4=Vendredi, 5=Samedi, 6=Dimanche` |
+| `heure_debut` | `Time` | `TIME` | `NOT NULL` |
+| `heure_fin` | `Time` | `TIME` | `NOT NULL` |
+| `rattrapage_id` | `Integer` | `INTEGER` | `NULLABLE`, `FK → rattrapages(id) ON DELETE SET NULL` |
+| `created_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()` |
+| `updated_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()`, mis à jour automatiquement |
+
+**Contraintes UNIQUE :**
+- `uq_groupe_horaire` : `(groupe_id, jour_semaine, heure_debut, heure_fin)` — un groupe ne peut pas avoir deux cours en même temps
+- `uq_salle_horaire` : `(salle_id, jour_semaine, heure_debut, heure_fin)` — une salle ne peut pas être utilisée deux fois en même temps
+
+**Relations :**
+- `groupe` → `groupes` (N→1)
+- `matiere` → `matieres` (N→1)
+- `salle` → `salles` (N→1)
+- `rattrapage` → `rattrapages` (N→1, nullable)
+
+---
+
+### Table : `etudiants_groupes` *(table de liaison N→N)*
+
+| Colonne | Type SQLAlchemy | Type SQL | Contraintes |
+|---|---|---|---|
+| `etudiant_id` | `Integer` | `INTEGER` | `PRIMARY KEY`, `FK → utilisateurs(id) ON DELETE CASCADE` |
+| `groupe_id` | `Integer` | `INTEGER` | `PRIMARY KEY`, `FK → groupes(id) ON DELETE CASCADE` |
+| `created_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()` |
+
+> Clé primaire composite : `(etudiant_id, groupe_id)` — un étudiant ne peut appartenir qu'à un seul groupe.
+
+---
+
+### Table : `notifications`
+
+| Colonne | Type SQLAlchemy | Type SQL | Contraintes |
+|---|---|---|---|
+| `id` | `Integer` | `SERIAL` | `PRIMARY KEY`, `INDEX` |
+| `utilisateur_id` | `Integer` | `INTEGER` | `NOT NULL`, `FK → utilisateurs(id) ON DELETE CASCADE` |
+| `titre` | `String(200)` | `VARCHAR(200)` | `NOT NULL` |
+| `message` | `Text` | `TEXT` | `NOT NULL` |
+| `est_lu` | `Boolean` | `BOOLEAN` | `DEFAULT FALSE` |
+| `created_at` | `DateTime(timezone=True)` | `TIMESTAMPTZ` | `DEFAULT NOW()` |
+
+**Relations :**
+- `utilisateur` → `utilisateurs` (N→1)
+
+---
+
+### Diagramme des relations (ERD simplifié)
+
+```
+utilisateurs ─────────────────────────────────────────────────┐
+    │                                                          │
+    │ 1→N (enseignant)          N→N (via etudiants_groupes)   │
+    ▼                           ▼                             │
+matieres ──────┐          groupes ──────┐                     │
+    │ 1→N       │              │ 1→N    │                     │
+    ▼           │              ▼        │                     │
+absences        │         emplois_du_temps ◄──────────────────┤
+    │ 1→N       │              ▲                              │
+    ▼           │              │ N→1                         │
+rattrapages ────┘         salles ◄──── rattrapages            │
+    │ 1→N                               ▲                    │
+    ▼                                   │ N→1 (valide_par)   │
+emplois_du_temps                   utilisateurs ◄────────────┘
+                                        │ 1→N
+                                        ▼
+                                   notifications
+
+departements ──► groupes (1→N)
+departements ──► matieres (1→N)
+```
+
+---
+
 ## Standard Paginated Response
 
 ```json
