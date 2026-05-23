@@ -65,16 +65,26 @@ TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "get_my_timetable",
-            "description": "Récupère l'emploi du temps hebdomadaire récurrent de l'utilisateur (enseignant ou étudiant).",
+            "name": "get_timetable",
+            "description": "Récupère l'emploi du temps hebdomadaire récurrent selon plusieurs critères : pour soi-même ('self'), un enseignant, un étudiant, un groupe, une salle ou une matière. Les permissions d'accès sont vérifiées automatiquement.",
             "parameters": {
                 "type": "object",
                 "properties": {
+                    "target_type": {
+                        "type": "string",
+                        "enum": ["self", "enseignant", "etudiant", "groupe", "salle", "matiere"],
+                        "description": "La cible de l'emploi du temps à consulter : 'self' (soi-même), 'enseignant', 'etudiant', 'groupe', 'salle' ou 'matiere'."
+                    },
+                    "search_query": {
+                        "type": "string",
+                        "description": "Le nom, prénom, email, ou identifiant de l'enseignant, étudiant, groupe, salle ou matière recherché."
+                    },
                     "jour_semaine": {
                         "type": "integer",
-                        "description": "Indice du jour de la semaine (0 pour Lundi, 1 pour Mardi, ..., 6 pour Dimanche)."
+                        "description": "Indice du jour de la semaine (0 pour Lundi, 1 pour Mardi, ..., 6 pour Dimanche) optionnel."
                     }
-                }
+                },
+                "required": ["target_type"]
             }
         }
     },
@@ -293,10 +303,13 @@ class ChatbotService:
             f"2. Utilise les outils/fonctions mis à ta disposition pour interroger la base de données ou initier des actions.\n"
             f"3. Pour toute action d'écriture, appelle l'outil correspondant — le backend demandera toujours une confirmation à l'utilisateur avant d'exécuter. Tu n'as pas besoin de répéter que tu as appelé l'outil.\n"
             f"4. Actions disponibles selon le rôle :\n"
-            f"   - TOUS LES RÔLES : update_my_profile (mettre à jour son propre profil : nom, prénom, email, mot de passe)\n"
+            f"   - TOUS LES RÔLES : \n"
+            f"     * update_my_profile (mettre à jour son propre profil)\n"
+            f"     * get_timetable (consulter l'emploi du temps récurrent : soi-même, un enseignant, un étudiant, un groupe, une salle ou une matière).\n"
+            f"       Remarque sur l'emploi du temps : Les administrateurs ont accès à TOUT. Les enseignants peuvent voir leur planning et celui de leurs cours/groupes/étudiants. Les étudiants peuvent voir leur planning et celui de leurs enseignants.\n"
             f"   - ENSEIGNANT : declare_absence (déclarer une absence), propose_rattrapage (proposer un rattrapage), annuler_rattrapage (annuler son propre rattrapage)\n"
             f"   - ADMINISTRATEUR : valider_absence, rejeter_absence, valider_rattrapage, annuler_rattrapage (pour n'importe quel rattrapage)\n"
-            f"   - ÉTUDIANT : peut interroger ses cours, rattrapages prévus et absences de ses enseignants (lecture seule)\n"
+            f"   - ÉTUDIANT : peut interroger ses cours, ses enseignants, rattrapages prévus et absences de ses enseignants (lecture seule)\n"
             f"5. Si des informations requises sont manquantes (ex: la matière, l'ID d'une absence), demande poliment ces précisions à l'utilisateur.\n"
             f"6. Ne génère JAMAIS de texte au format XML ou HTML avec des balises comme <function> pour appeler les outils. Utilise exclusivement l'appel d'outil natif de l'API.\n"
             f"7. Ne propose JAMAIS une action non autorisée pour le rôle en cours. Si quelqu'un demande une action réservée à un autre rôle, explique-le poliment.\n"
@@ -405,14 +418,216 @@ class ChatbotService:
                     })
                 return {"rattrapages": res_list}
 
-            elif name == "get_my_timetable":
+            elif name == "get_timetable":
+                target_type = args.get("target_type")
+                search_query = args.get("search_query")
                 jour_semaine = args.get("jour_semaine")
-                if user.role == RoleUtilisateur.ENSEIGNANT:
-                    items, total = EmploiDuTempsService.get_by_enseignant(db, user.id, 1, 100, jour_semaine)
-                elif user.role == RoleUtilisateur.ETUDIANT:
-                    items, total = EmploiDuTempsService.get_by_etudiant(db, user.id, 1, 100, jour_semaine)
+
+                is_admin = user.role in [RoleUtilisateur.ADMIN_SYSTEME, RoleUtilisateur.ADMINISTRATION]
+                is_teacher = user.role == RoleUtilisateur.ENSEIGNANT
+                is_student = user.role == RoleUtilisateur.ETUDIANT
+
+                items = []
+                total = 0
+
+                # 1. target_type = self
+                if target_type == "self":
+                    if is_teacher:
+                        items, total = EmploiDuTempsService.get_by_enseignant(db, user.id, 1, 100, jour_semaine)
+                    elif is_student:
+                        items, total = EmploiDuTempsService.get_by_etudiant(db, user.id, 1, 100, jour_semaine)
+                    else:
+                        return {"message": "Les administrateurs n'ont pas d'emploi du temps récurrent personnel."}
+
+                # 2. target_type = groupe
+                elif target_type == "groupe":
+                    if not search_query:
+                        return {"message": "Veuillez fournir le nom ou l'ID du groupe à rechercher."}
+                    
+                    # Find group
+                    groupe_query = db.query(Groupe)
+                    if search_query.isdigit():
+                        groupe_query = groupe_query.filter(or_(Groupe.id == int(search_query), Groupe.nom.ilike(f"%{search_query}%")))
+                    else:
+                        groupe_query = groupe_query.filter(Groupe.nom.ilike(f"%{search_query}%"))
+                    
+                    groupes = groupe_query.all()
+                    if not groupes:
+                        return {"message": f"Aucun groupe trouvé correspondant à '{search_query}'."}
+                    
+                    # If multiple, but one matches exactly, use it. Otherwise use the first.
+                    target_groupe = groupes[0]
+                    for g in groupes:
+                        if g.nom.lower() == search_query.lower():
+                            target_groupe = g
+                            break
+
+                    # Check permissions
+                    if is_student:
+                        # Student can only view their own group
+                        student_group_ids = [g[0] for g in db.query(etudiants_groupes.c.groupe_id).filter(etudiants_groupes.c.etudiant_id == user.id).all()]
+                        if target_groupe.id not in student_group_ids:
+                            return {"message": f"Vous n'êtes pas autorisé à consulter l'emploi du temps d'un autre groupe que le vôtre."}
+                    elif is_teacher:
+                        # Teacher can only view groups they teach
+                        teacher_group_ids = [g[0] for g in db.query(distinct(EmploiDuTemps.groupe_id)).join(Matiere).filter(Matiere.enseignant_id == user.id).all()]
+                        if target_groupe.id not in teacher_group_ids:
+                            return {"message": f"Vous n'êtes pas autorisé à consulter l'emploi du temps d'un groupe auquel vous n'enseignez pas."}
+                    
+                    items, total = EmploiDuTempsService.get_by_groupe(db, target_groupe.id, 1, 100, jour_semaine)
+
+                # 3. target_type = salle
+                elif target_type == "salle":
+                    if not is_admin:
+                        return {"message": "Seuls les administrateurs peuvent consulter directement l'emploi du temps d'une salle."}
+                    if not search_query:
+                        return {"message": "Veuillez fournir le nom ou l'ID de la salle à rechercher."}
+                    
+                    salle_query = db.query(Salle)
+                    if search_query.isdigit():
+                        salle_query = salle_query.filter(or_(Salle.id == int(search_query), Salle.nom.ilike(f"%{search_query}%")))
+                    else:
+                        salle_query = salle_query.filter(Salle.nom.ilike(f"%{search_query}%"))
+                    
+                    salles = salle_query.all()
+                    if not salles:
+                        return {"message": f"Aucune salle trouvée correspondant à '{search_query}'."}
+                    
+                    target_salle = salles[0]
+                    for s in salles:
+                        if s.nom.lower() == search_query.lower():
+                            target_salle = s
+                            break
+
+                    items, total = EmploiDuTempsService.get_by_salle(db, target_salle.id, 1, 100, jour_semaine)
+
+                # 4. target_type = matiere
+                elif target_type == "matiere":
+                    if not search_query:
+                        return {"message": "Veuillez fournir le nom ou l'ID de la matière à rechercher."}
+                    
+                    matiere_query = db.query(Matiere)
+                    if search_query.isdigit():
+                        matiere_query = matiere_query.filter(or_(Matiere.id == int(search_query), Matiere.nom.ilike(f"%{search_query}%")))
+                    else:
+                        matiere_query = matiere_query.filter(Matiere.nom.ilike(f"%{search_query}%"))
+                    
+                    matieres = matiere_query.all()
+                    if not matieres:
+                        return {"message": f"Aucune matière trouvée correspondant à '{search_query}'."}
+                    
+                    target_matiere = matieres[0]
+                    for m in matieres:
+                        if m.nom.lower() == search_query.lower():
+                            target_matiere = m
+                            break
+
+                    # Check permissions
+                    if is_student:
+                        return {"message": "Les étudiants ne sont pas autorisés à consulter directement l'emploi du temps par matière."}
+                    elif is_teacher:
+                        if target_matiere.enseignant_id != user.id:
+                            return {"message": "Vous n'êtes pas autorisé à consulter l'emploi du temps d'une matière qui ne vous est pas attribuée."}
+                    
+                    items, total = EmploiDuTempsService.get_by_matiere(db, target_matiere.id, 1, 100, jour_semaine)
+
+                # 5. target_type = enseignant
+                elif target_type == "enseignant":
+                    if not search_query:
+                        return {"message": "Veuillez fournir le nom, prénom ou email de l'enseignant à rechercher."}
+                    
+                    teacher_query = db.query(Utilisateur).filter(Utilisateur.role == RoleUtilisateur.ENSEIGNANT)
+                    if search_query.isdigit():
+                        teacher_query = teacher_query.filter(Utilisateur.id == int(search_query))
+                    else:
+                        # Split by space to support nom + prenom search
+                        parts = search_query.split()
+                        if len(parts) >= 2:
+                            p1, p2 = parts[0], parts[1]
+                            teacher_query = teacher_query.filter(
+                                or_(
+                                    and_(Utilisateur.prenom.ilike(f"%{p1}%"), Utilisateur.nom.ilike(f"%{p2}%")),
+                                    and_(Utilisateur.prenom.ilike(f"%{p2}%"), Utilisateur.nom.ilike(f"%{p1}%"))
+                                )
+                            )
+                        else:
+                            teacher_query = teacher_query.filter(
+                                or_(
+                                    Utilisateur.nom.ilike(f"%{search_query}%"),
+                                    Utilisateur.prenom.ilike(f"%{search_query}%"),
+                                    Utilisateur.email.ilike(f"%{search_query}%")
+                                )
+                            )
+                    
+                    teachers = teacher_query.all()
+                    if not teachers:
+                        return {"message": f"Aucun enseignant trouvé correspondant à '{search_query}'."}
+                    
+                    target_teacher = teachers[0]
+
+                    # Check permissions
+                    if is_teacher and target_teacher.id != user.id:
+                        return {"message": "Vous n'êtes pas autorisé à consulter l'emploi du temps d'un autre enseignant."}
+                    elif is_student:
+                        # Student can only see teachers that teach them
+                        student_group_ids = [g[0] for g in db.query(etudiants_groupes.c.groupe_id).filter(etudiants_groupes.c.etudiant_id == user.id).all()]
+                        student_matiere_ids = [m[0] for m in db.query(distinct(EmploiDuTemps.matiere_id)).filter(EmploiDuTemps.groupe_id.in_(student_group_ids)).all()]
+                        allowed_teacher_ids = [t[0] for t in db.query(distinct(Matiere.enseignant_id)).filter(Matiere.id.in_(student_matiere_ids)).all()]
+                        if target_teacher.id not in allowed_teacher_ids:
+                            return {"message": "Vous n'êtes autorisé à consulter l'emploi du temps que de vos propres enseignants."}
+                    
+                    items, total = EmploiDuTempsService.get_by_enseignant(db, target_teacher.id, 1, 100, jour_semaine)
+
+                # 6. target_type = etudiant
+                elif target_type == "etudiant":
+                    if not search_query:
+                        return {"message": "Veuillez fournir le nom, prénom ou email de l'étudiant à rechercher."}
+                    
+                    student_query = db.query(Utilisateur).filter(Utilisateur.role == RoleUtilisateur.ETUDIANT)
+                    if search_query.isdigit():
+                        student_query = student_query.filter(Utilisateur.id == int(search_query))
+                    else:
+                        parts = search_query.split()
+                        if len(parts) >= 2:
+                            p1, p2 = parts[0], parts[1]
+                            student_query = student_query.filter(
+                                or_(
+                                    and_(Utilisateur.prenom.ilike(f"%{p1}%"), Utilisateur.nom.ilike(f"%{p2}%")),
+                                    and_(Utilisateur.prenom.ilike(f"%{p2}%"), Utilisateur.nom.ilike(f"%{p1}%"))
+                                )
+                            )
+                        else:
+                            student_query = student_query.filter(
+                                or_(
+                                    Utilisateur.nom.ilike(f"%{search_query}%"),
+                                    Utilisateur.prenom.ilike(f"%{search_query}%"),
+                                    Utilisateur.email.ilike(f"%{search_query}%")
+                                )
+                            )
+                    
+                    students = student_query.all()
+                    if not students:
+                        return {"message": f"Aucun étudiant trouvé correspondant à '{search_query}'."}
+                    
+                    target_student = students[0]
+
+                    # Check permissions
+                    if is_student and target_student.id != user.id:
+                        return {"message": "Vous n'êtes pas autorisé à consulter l'emploi du temps d'un autre étudiant."}
+                    elif is_teacher:
+                        # Teacher can only query students in their taught groups
+                        teacher_group_ids = [g[0] for g in db.query(distinct(EmploiDuTemps.groupe_id)).join(Matiere).filter(Matiere.enseignant_id == user.id).all()]
+                        student_in_group = db.query(etudiants_groupes).filter(
+                            etudiants_groupes.c.etudiant_id == target_student.id,
+                            etudiants_groupes.c.groupe_id.in_(teacher_group_ids)
+                        ).first() is not None
+                        if not student_in_group:
+                            return {"message": "Vous n'êtes autorisé à consulter l'emploi du temps que des étudiants inscrits dans vos cours."}
+                    
+                    items, total = EmploiDuTempsService.get_by_etudiant(db, target_student.id, 1, 100, jour_semaine)
+
                 else:
-                    return {"message": "Cette information n'est disponible que pour les enseignants et étudiants."}
+                    return {"message": "Cible de l'emploi du temps non reconnue."}
 
                 res_list = []
                 # Order by weekday, then start time

@@ -19,7 +19,6 @@ import {
   MessageSquare,
   Bot,
   Paperclip,
-  Trash2,
   File as FileIcon
 } from "lucide-react";
 import { toast } from "sonner";
@@ -48,7 +47,7 @@ export default function Chatbot() {
     if (status === "authenticated" && session?.user && !hasLoaded) {
       const user = session.user as any;
       const storageKey = `chatbot_messages_${user.id || user.email}`;
-      const saved = localStorage.getItem(storageKey);
+      const saved = sessionStorage.getItem(storageKey);
       
       if (saved) {
         try {
@@ -95,7 +94,7 @@ export default function Chatbot() {
     if (hasLoaded && status === "authenticated" && session?.user) {
       const user = session.user as any;
       const storageKey = `chatbot_messages_${user.id || user.email}`;
-      localStorage.setItem(storageKey, JSON.stringify(messages));
+      sessionStorage.setItem(storageKey, JSON.stringify(messages));
     }
   }, [messages, hasLoaded, status, session]);
 
@@ -156,7 +155,7 @@ export default function Chatbot() {
     if (status !== "authenticated" || !session?.user) return;
     const user = session.user as any;
     const storageKey = `chatbot_messages_${user.id || user.email}`;
-    localStorage.removeItem(storageKey);
+    sessionStorage.removeItem(storageKey);
     setAttachedFile(null);
     
     const firstName = user.prenom || "";
@@ -367,15 +366,6 @@ export default function Chatbot() {
             </div>
             
             <div className="flex items-center gap-1.5">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={handleClearChat}
-                title="Effacer la conversation"
-                className="text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
-              >
-                <Trash2 size={16} />
-              </Button>
               <Button
                 variant="ghost"
                 size="icon-sm"
