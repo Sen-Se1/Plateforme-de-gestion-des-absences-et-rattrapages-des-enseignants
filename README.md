@@ -1,233 +1,433 @@
-# 📚 Plateforme de Gestion des Absences et Rattrapages des Enseignants
+# Plateforme de Gestion des Absences et Rattrapages des Enseignants
 
-Une application web full-stack pour la gestion des absences des enseignants, la planification des séances de rattrapage, et la communication via un assistant virtuel IA.
+![Next.js](https://img.shields.io/badge/Frontend-Next.js%2014-black?style=for-the-badge&logo=next.js)
+![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)
+![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-336791?style=for-the-badge&logo=postgresql)
+![TailwindCSS](https://img.shields.io/badge/UI-TailwindCSS-38B2AC?style=for-the-badge&logo=tailwind-css)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python)
+![TypeScript](https://img.shields.io/badge/TypeScript-Ready-3178C6?style=for-the-badge&logo=typescript)
+
+## 📌 Description
+
+**Plateforme de Gestion des Absences et Rattrapages des Enseignants** est une application web full-stack permettant de gérer efficacement les absences des enseignants, les séances de rattrapage, les emplois du temps, les notifications et les interactions entre les différents acteurs d’un établissement universitaire.
+
+Le projet intègre également un **assistant virtuel IA** capable d’aider les utilisateurs à consulter des informations, déclarer une absence, proposer un rattrapage ou effectuer certaines actions selon leurs permissions.
 
 ---
 
-## 🛠️ Stack Technique
+## ✨ Fonctionnalités principales
+
+- Authentification sécurisée avec JWT et gestion des sessions côté frontend.
+- Gestion des utilisateurs selon plusieurs rôles.
+- Déclaration, validation et suivi des absences des enseignants.
+- Proposition, validation, annulation et consultation des séances de rattrapage.
+- Gestion des départements, groupes, matières, salles et emplois du temps.
+- Notifications automatiques selon les événements importants.
+- Tableau de bord avec statistiques et suivi global.
+- Upload de justificatifs pour les absences.
+- Assistant virtuel IA connecté à la plateforme.
+- Documentation API interactive via Swagger UI.
+
+---
+
+## 👥 Rôles utilisateurs
+
+| Rôle | Code | Permissions principales |
+|---|---|---|
+| Administrateur Système | `admin_systeme` | Gestion complète de la plateforme, utilisateurs, départements et données globales |
+| Administration | `administration` | Validation des absences/rattrapages, gestion pédagogique et administrative |
+| Enseignant | `enseignant` | Déclaration des absences, proposition de rattrapages, consultation du planning |
+| Étudiant | `etudiant` | Consultation de l’emploi du temps, des notifications et des rattrapages |
+
+---
+
+## 🧱 Stack technique
 
 | Couche | Technologie |
 |---|---|
-| **Backend** | FastAPI (Python) |
-| **Base de données** | PostgreSQL + SQLAlchemy ORM |
-| **Frontend** | Next.js 14 (App Router) + Shadcn UI |
-| **Authentification** | JWT (backend) + NextAuth.js (frontend) |
-| **IA / Chatbot** | Groq API (`llama-3.3-70b-versatile`) |
-| **Styling** | Tailwind CSS |
+| Frontend | Next.js 14, TypeScript, App Router |
+| UI | Tailwind CSS, Shadcn UI |
+| Backend | FastAPI, Python |
+| Base de données | PostgreSQL |
+| ORM | SQLAlchemy |
+| Authentification | JWT, NextAuth.js |
+| IA / Chatbot | Groq API, `llama-3.3-70b-versatile` |
+| Documentation API | Swagger UI / OpenAPI |
 
 ---
 
-## 📁 Structure du Projet
+## 📁 Structure du projet
 
-```
-Gestion des Absences et Rattrapage des Enseignants/
-├── backend/                   # API FastAPI
+```bash
+Plateforme-de-gestion-des-absences-et-rattrapages-des-enseignants/
+├── backend/
 │   ├── app/
-│   │   ├── api/               # Endpoints REST (auth, users, absences, etc.)
-│   │   ├── core/              # Config, DB, sécurité, dépendances
-│   │   ├── models/            # Modèles SQLAlchemy (ORM)
-│   │   ├── routers/           # Routeurs FastAPI
-│   │   ├── schemas/           # Schémas Pydantic
-│   │   ├── services/          # Logique métier
-│   │   └── utils/             # Utilitaires (upload, etc.)
-│   ├── uploads/               # Fichiers justificatifs uploadés
-│   ├── .env                   # Variables d'environnement backend
-│   ├── requirements.txt       # Dépendances Python
-│   └── run.bat                # Script de lancement Windows
+│   │   ├── api/                 # Endpoints REST
+│   │   ├── core/                # Configuration, sécurité, base de données
+│   │   ├── models/              # Modèles SQLAlchemy
+│   │   ├── routers/             # Routeurs FastAPI
+│   │   ├── schemas/             # Schémas Pydantic
+│   │   ├── services/            # Logique métier
+│   │   └── utils/               # Fonctions utilitaires
+│   ├── uploads/                 # Fichiers uploadés
+│   ├── requirements.txt         # Dépendances Python
+│   └── run.bat                  # Script de lancement Windows
 │
-└── frontend/                  # Application Next.js
-    ├── src/
-    │   ├── app/               # App Router (pages et layouts)
-    │   │   └── dashboard/     # Pages protégées (admin, enseignant, étudiant)
-    │   ├── components/        # Composants React réutilisables
-    │   │   └── chatbot/       # Assistant virtuel IA (Chatbot.tsx)
-    │   ├── lib/               # Helpers, API client, auth
-    │   └── types/             # Types TypeScript
-    ├── .env.local             # Variables d'environnement frontend
-    └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── app/                 # Pages Next.js App Router
+│   │   ├── components/          # Composants réutilisables
+│   │   ├── lib/                 # API client, helpers, auth
+│   │   └── types/               # Types TypeScript
+│   └── package.json
+│
+├── API_DOCUMENTATION.md
+└── README.md
 ```
 
 ---
 
-## ⚙️ Installation et Lancement
+## ⚙️ Prérequis
 
-### Prérequis
-- Python 3.10+
-- Node.js 18+
-- PostgreSQL 14+
+Avant de lancer le projet, installez :
+
+- Python `3.10+`
+- Node.js `18+`
+- PostgreSQL `14+`
+- Git
+- npm ou pnpm
 
 ---
 
-### 1. Backend (FastAPI)
+## 🚀 Installation et lancement
+
+### 1. Cloner le projet
+
+```bash
+git clone https://github.com/Sen-Se1/Plateforme-de-gestion-des-absences-et-rattrapages-des-enseignants.git
+cd Plateforme-de-gestion-des-absences-et-rattrapages-des-enseignants
+```
+
+---
+
+### 2. Configuration du backend
 
 ```bash
 cd backend
-
-# 1. Créer et activer l'environnement virtuel
 python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # Linux/macOS
-
-# 2. Installer les dépendances
-pip install -r requirements.txt
-
-# 3. Configurer les variables d'environnement
-# Copier et éditer le fichier .env
 ```
 
-**Variables `.env` (backend) :**
+#### Windows
+
+```bash
+venv\Scripts\activate
+```
+
+#### Linux / macOS
+
+```bash
+source venv/bin/activate
+```
+
+#### Installer les dépendances
+
+```bash
+pip install -r requirements.txt
+```
+
+#### Créer le fichier `.env`
+
+Créez un fichier `.env` dans le dossier `backend/` :
+
 ```env
-# Base de données PostgreSQL
-DATABASE_URL=postgresql://postgres:<password>@localhost:5432/gestion_absences
+DATABASE_URL=postgresql://postgres:password@localhost:5432/gestion_absences
 
-# Sécurité JWT
-SECRET_KEY=your-secret-key-here
+SECRET_KEY=change_this_secret_key
 ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=99999999
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
 
-# Upload de fichiers
 UPLOAD_DIR=./uploads/justificatifs
 MAX_UPLOAD_SIZE=5242880
 ALLOWED_EXTENSIONS=.pdf,.jpg,.jpeg,.png
 
-# Groq AI (chatbot)
-GROQ_API_KEY=your-groq-api-key-here
+GROQ_API_KEY=your_groq_api_key
 ```
+
+#### Lancer le backend
 
 ```bash
-# 4. Lancer le serveur
-./run.bat                    # Windows
-# uvicorn main:app --reload  # ou directement
+uvicorn main:app --reload
 ```
 
-L'API sera disponible sur : `http://127.0.0.1:8000`  
-Documentation Swagger : `http://127.0.0.1:8000/docs`
+Ou sur Windows :
+
+```bash
+run.bat
+```
+
+Backend disponible sur :
+
+```text
+http://127.0.0.1:8000
+```
+
+Documentation Swagger :
+
+```text
+http://127.0.0.1:8000/docs
+```
 
 ---
 
-### 2. Frontend (Next.js)
+### 3. Configuration du frontend
 
 ```bash
-cd frontend
-
-# 1. Installer les dépendances
+cd ../frontend
 npm install
-
-# 2. Configurer les variables d'environnement
-cp .env.example .env.local
-# puis éditer .env.local
 ```
 
-**Variables `.env.local` (frontend) :**
+#### Créer le fichier `.env.local`
+
+Créez un fichier `.env.local` dans le dossier `frontend/` :
+
 ```env
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=a_very_long_and_secret_random_string_here
+NEXTAUTH_SECRET=change_this_nextauth_secret
 NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1
 ```
 
+#### Lancer le frontend
+
 ```bash
-# 3. Lancer le serveur de développement
 npm run dev
 ```
 
-L'application sera disponible sur : `http://localhost:3000`
+Frontend disponible sur :
+
+```text
+http://localhost:3000
+```
 
 ---
 
-## 🔐 Rôles et Permissions
+## 🔐 Authentification
 
-| Rôle | Code | Accès |
-|---|---|---|
-| **Administrateur Système** | `admin_systeme` | Accès complet — gestion utilisateurs, départements, toutes données |
-| **Administration** | `administration` | Valide absences/rattrapages, gère groupes, matières, salles |
-| **Enseignant** | `enseignant` | Déclare absences, propose rattrapages, consulte son planning |
-| **Étudiant** | `etudiant` | Consulte son emploi du temps et les rattrapages le concernant |
+L’application utilise :
 
----
+- JWT côté backend pour sécuriser les endpoints API.
+- NextAuth.js côté frontend pour gérer les sessions utilisateur.
+- Des permissions basées sur les rôles pour limiter l’accès aux fonctionnalités.
 
-## 🗄️ Base de Données
+Exemple d’en-tête API :
 
-**SGBD :** PostgreSQL  
-**ORM :** SQLAlchemy (Python)
-
-### Tables principales
-
-| Table | Description |
-|---|---|
-| `utilisateurs` | Tous les comptes utilisateurs (tous rôles confondus) |
-| `departements` | Départements universitaires |
-| `groupes` | Groupes d'étudiants, liés à un département |
-| `matieres` | Matières/cours, liés à un département et un enseignant |
-| `salles` | Salles de cours et amphithéâtres |
-| `emplois_du_temps` | Créneaux horaires récurrents hebdomadaires |
-| `absences` | Déclarations d'absence des enseignants |
-| `rattrapages` | Séances de rattrapage proposées et validées |
-| `etudiants_groupes` | Table de liaison N↔N étudiants ↔ groupes |
-| `notifications` | Notifications système envoyées aux utilisateurs |
-
-> 📖 Voir le schéma complet dans [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
-
----
-
-## 🤖 Assistant Virtuel IA
-
-Le chatbot embarqué dans l'interface utilise le modèle **`llama-3.3-70b-versatile`** de **Groq API**.
-
-### Fonctionnalités
-- Répond aux questions en langage naturel sur les données de la plateforme
-- Adapte les réponses et actions autorisées au **rôle** de l'utilisateur connecté
-- **Consultation** : emploi du temps, absences, rattrapages, salles disponibles
-- **Actions** (avec confirmation obligatoire) : déclaration d'absence, proposition de rattrapage, validation/rejet d'absences (admin), annulation de rattrapages
-- Support de l'**upload de fichiers justificatifs** directement dans la conversation
-- Conversation **persistante par session navigateur** (effacée à la fermeture de l'onglet)
-
-### Endpoints Chatbot
-| Endpoint | Description |
-|---|---|
-| `POST /api/v1/chatbot/message` | Envoie un message et reçoit une réponse IA |
-| `POST /api/v1/chatbot/confirm` | Confirme et exécute une action proposée |
-| `POST /api/v1/chatbot/upload` | Upload un fichier justificatif |
+```http
+Authorization: Bearer <JWT_TOKEN>
+```
 
 ---
 
 ## 📡 API REST
 
-**Base URL :** `http://127.0.0.1:8000/api/v1`  
-**Authentification :** `Authorization: Bearer <JWT_TOKEN>`
+URL de base :
 
-| Préfixe | Module |
+```text
+http://127.0.0.1:8000/api/v1
+```
+
+| Module | Préfixe |
 |---|---|
-| `/auth` | Authentification (login, profil) |
-| `/users` | Gestion des utilisateurs |
-| `/departements` | Départements |
-| `/groupes` | Groupes d'étudiants |
-| `/matieres` | Matières |
-| `/salles` | Salles |
-| `/emplois-du-temps` | Emplois du temps |
-| `/absences` | Absences |
-| `/rattrapages` | Rattrapages |
-| `/dashboard` | Statistiques et tableaux de bord |
-| `/notifications` | Notifications |
-| `/chatbot` | Assistant virtuel IA |
+| Authentification | `/auth` |
+| Utilisateurs | `/users` |
+| Départements | `/departements` |
+| Groupes | `/groupes` |
+| Matières | `/matieres` |
+| Salles | `/salles` |
+| Emplois du temps | `/emplois-du-temps` |
+| Absences | `/absences` |
+| Rattrapages | `/rattrapages` |
+| Dashboard | `/dashboard` |
+| Notifications | `/notifications` |
+| Chatbot IA | `/chatbot` |
 
-> 📖 Documentation complète : [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)  
-> 🔗 Documentation interactive (Swagger UI) : `http://127.0.0.1:8000/docs`
+Pour plus de détails, consultez :
+
+```text
+API_DOCUMENTATION.md
+```
+
+---
+
+## 🗄️ Base de données
+
+Le projet utilise **PostgreSQL** avec **SQLAlchemy ORM**.
+
+### Tables principales
+
+| Table | Description |
+|---|---|
+| `utilisateurs` | Comptes utilisateurs et rôles |
+| `departements` | Départements universitaires |
+| `groupes` | Groupes d’étudiants |
+| `matieres` | Matières enseignées |
+| `salles` | Salles de cours |
+| `emplois_du_temps` | Créneaux horaires |
+| `absences` | Absences déclarées |
+| `rattrapages` | Séances de rattrapage |
+| `etudiants_groupes` | Association étudiants/groupes |
+| `notifications` | Notifications système |
 
 ---
 
-## 📬 Notifications Automatiques
+## 🤖 Assistant virtuel IA
 
-Le système envoie automatiquement des notifications aux utilisateurs concernés lors des événements clés :
+L’application contient un chatbot intégré utilisant l’API Groq avec le modèle :
 
-- Nouvelle absence déclarée → **tous les admins**
-- Absence validée / rejetée → **enseignant**
-- Proposition de rattrapage → **tous les admins**
-- Rattrapage validé / annulé → **enseignant + étudiants concernés**
-- Affectation / retrait d'un groupe → **étudiant**
-- Création / activation / désactivation de compte → **utilisateur**
+```text
+llama-3.3-70b-versatile
+```
+
+### Capacités
+
+- Répondre aux questions sur les absences, rattrapages, emplois du temps et salles.
+- Adapter les réponses selon le rôle connecté.
+- Aider à déclarer une absence.
+- Aider à proposer une séance de rattrapage.
+- Confirmer une action avant exécution.
+- Gérer l’upload de justificatifs.
+
+### Endpoints chatbot
+
+| Endpoint | Description |
+|---|---|
+| `POST /api/v1/chatbot/message` | Envoyer un message au chatbot |
+| `POST /api/v1/chatbot/confirm` | Confirmer une action proposée |
+| `POST /api/v1/chatbot/upload` | Uploader un justificatif |
 
 ---
+
+## 🔔 Notifications automatiques
+
+Le système génère des notifications lors de plusieurs événements :
+
+- Nouvelle absence déclarée.
+- Absence validée ou rejetée.
+- Nouvelle proposition de rattrapage.
+- Rattrapage validé, annulé ou rejeté.
+- Affectation d’un étudiant à un groupe.
+- Création, activation ou désactivation d’un compte.
+- Changements importants liés à l’emploi du temps.
+
+---
+
+## 🧪 Tests rapides
+
+### Tester le backend
+
+```bash
+curl http://127.0.0.1:8000/docs
+```
+
+### Tester le frontend
+
+Ouvrir dans le navigateur :
+
+```text
+http://localhost:3000
+```
+
+---
+
+## 🛠️ Commandes utiles
+
+### Backend
+
+```bash
+cd backend
+venv\Scripts\activate
+uvicorn main:app --reload
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm run dev
+```
+
+### Vérifier les dépendances frontend
+
+```bash
+npm audit
+```
+
+### Installer une nouvelle dépendance frontend
+
+```bash
+npm install package-name
+```
+
+---
+
+## 📸 Captures d’écran
+
+Vous pouvez ajouter ici des captures d’écran de l’application :
+
+```md
+![Dashboard](./docs/screenshots/dashboard.png)
+![Absences](./docs/screenshots/absences.png)
+![Chatbot](./docs/screenshots/chatbot.png)
+```
+
+Structure recommandée :
+
+```bash
+docs/
+└── screenshots/
+    ├── dashboard.png
+    ├── absences.png
+    └── chatbot.png
+```
+
+---
+
+## 📌 Améliorations futures
+
+- Dockerisation complète du frontend, backend et PostgreSQL.
+- Ajout d’un fichier `docker-compose.yml`.
+- Tests unitaires et tests d’intégration.
+- CI/CD avec GitHub Actions.
+- Export PDF des absences et rattrapages.
+- Système de statistiques avancées.
+- Amélioration de l’assistant IA avec plus de contexte métier.
+- Déploiement cloud ou VPS.
+
+---
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues.
+
+```bash
+git checkout -b feature/ma-fonctionnalite
+git add .
+git commit -m "feat: add new feature"
+git push origin feature/ma-fonctionnalite
+```
+
+Ensuite, ouvrez une Pull Request.
+
+---
+
+## 👨‍💻 Auteur
+
+Développé par **Sen-Se1** dans le cadre d’un projet académique.
+
+GitHub : [Sen-Se1](https://github.com/Sen-Se1)
+
+---
+
 ## 📄 Licence
 
-Projet académique — Gestion des Absences et Rattrapages des Enseignants.  
+Projet académique — Gestion des Absences et Rattrapages des Enseignants.
+
 Tous droits réservés © 2026.
