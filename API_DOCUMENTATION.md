@@ -1163,7 +1163,139 @@ If **any** conflict is detected, the entry is **not saved** and a `409 Conflict`
 
 ---
 
-## 12. Notification Events Reference
+## 12. Virtual Assistant Chatbot (`/api/v1/chatbot`)
+
+This module provides conversational AI capabilities to the application powered by the Groq API. It allows users to query database records, update their own profiles, declare/manage absences, and schedule or validate rattrapages through natural language conversation.
+
+---
+
+### `POST /chatbot/message`
+**Description:** Sends a message in the conversation history to the AI Chatbot. The backend processes the message, uses the Groq LLM model to decide whether to call read-only query tools or action tools, runs authorization checks, and responds.
+- If the AI wants to execute a read-only query (e.g., fetch timetable, find absences), the backend queries the DB and returns the synthesized answer in plain text.
+- If the AI wants to perform a write action (e.g., declare absence, propose rattrapage, validate absence), the backend pre-validates the parameters and returns a confirmation payload instead of executing immediately.
+
+**Access:** Any authenticated role.
+
+**Request Body** (`application/json`):
+```json
+{
+  "message": "Quels sont mes cours de lundi ?",
+  "history": [
+    {"role": "user", "content": "Bonjour"},
+    {"role": "assistant", "content": "Bonjour ! Comment puis-je vous aider ?"}
+  ]
+}
+```
+
+**Response 200 (Plain text reply):**
+```json
+{
+  "type": "text",
+  "content": "Lundi, vous avez un cours de 'Algorithmique Avancée' de 08:00 à 10:00 dans la salle B202 avec le groupe A."
+}
+```
+
+**Response 200 (Action confirmation prompt):**
+```json
+{
+  "type": "confirmation",
+  "content": "Confirmez-vous la déclaration d'absence pour le cours de **Algorithmique Avancée** le **2026-06-10** pour le motif suivant : *Rendez-vous médical* ?",
+  "action_data": {
+    "action": "declare_absence",
+    "params": {
+      "matiere_id": 2,
+      "date_absence": "2026-06-10",
+      "motif": "Rendez-vous médical"
+    }
+  }
+}
+```
+
+---
+
+### `POST /chatbot/confirm`
+**Description:** Confirms and executes a previously validated chatbot action from the UI. After the user confirms the action prompt, the frontend sends this payload containing the exact action name and the pre-validated parameter list to write the changes to the database.
+
+**Access:** Any authenticated role (permissions are checked against the specific action's rules).
+
+**Request Body** (`application/json`):
+```json
+{
+  "action": "declare_absence",
+  "params": {
+    "matiere_id": 2,
+    "date_absence": "2026-06-10",
+    "motif": "Rendez-vous médical",
+    "justificatif_path": "uploads/justificatifs/medical.pdf"
+  }
+}
+```
+
+**Response 200 (Success):**
+```json
+{
+  "success": true,
+  "message": "✅ Votre absence pour le cours du 10/06/2026 a été déclarée avec succès et est en attente de validation par l'administration."
+}
+```
+
+**Error 400:** `{"detail": "Error message detailing business rule violations or database issues"}`
+
+---
+
+### `POST /chatbot/upload`
+**Description:** Uploads a supporting file (medical certificate, proof of justification) specifically during a chatbot conversation workflow. The file is saved inside the backend's static file system and the relative path is returned to be included inside the `confirm` action params.
+
+**Access:** Any authenticated role.
+
+**Content-Type:** `multipart/form-data`
+
+**Form Fields:**
+- `file`: The supporting document file (PDF, PNG, JPG, JPEG. Max size: 5 MB).
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "filename": "certificat.pdf",
+  "path": "uploads/justificatifs/2026-05-23_certificat.pdf"
+}
+```
+
+**Error 400:** `{"detail": "File size exceeds limit / File format not allowed."}`
+
+---
+
+### Chatbot Actions Reference
+
+The chatbot translates user intents into specific action confirmation flows. Below are the supported actions:
+
+| Action | Allowed Roles | Description | Parameters |
+|---|---|---|---|
+| `update_my_profile` | **All** | Updates own first name, last name, email or password. | `nom` (str), `prenom` (str), `email` (str), `mot_de_passe` (str) |
+| `declare_absence` | **Enseignant** | Declares a future absence. Enforces business rules (weekday, taught course). | `matiere_id` (int), `date_absence` (str), `motif` (str), `justificatif_path` (str, optional) |
+| `propose_rattrapage` | **Enseignant** | Proposes a makeup session for a validated absence. Enforces conflict checks. | `absence_id` (int), `date_proposee` (str), `heure_debut` (str), `heure_fin` (str), `salle_id` (int) |
+| `annuler_rattrapage` | **Enseignant** (own), **Admin** (any) | Cancels a proposed/validated makeup session. | `rattrapage_id` (int) |
+| `valider_absence` | **Admin** | Validates a teacher's pending absence declaration. | `absence_id` (int) |
+| `rejeter_absence` | **Admin** | Rejects a teacher's pending absence declaration. | `absence_id` (int) |
+| `valider_rattrapage` | **Admin** | Validates a proposed makeup session. | `rattrapage_id` (int) |
+
+---
+
+### Chatbot Read-Only Query Tools Reference
+
+When answering user questions directly, the chatbot utilizes the following tools to query database records:
+
+| Tool | Parameters | Description |
+|---|---|---|
+| `get_my_absences` | `status` (str), `date_from` (str), `date_to` (str) | Lists relevant absences. Teachers see their own; Students see their teachers'; Admins see all. |
+| `get_upcoming_rattrapages` | None | Lists upcoming/scheduled makeup sessions. |
+| `get_timetable` | `target_type` (str), `search_query` (str, optional), `jour_semaine` (int, optional) | Fetches recurring weekly timetable for `self`, `enseignant`, `etudiant`, `groupe`, `salle`, or `matiere`. |
+| `get_available_rooms` | `date` (str), `heure_debut` (str), `heure_fin` (str) | Finds free classrooms with no recurring course or makeup conflicts. |
+
+---
+
+## 13. Notification Events Reference
 
 | Event | Recipient(s) | Title | Trigger |
 |---|---|---|---|
@@ -1185,7 +1317,7 @@ If **any** conflict is detected, the entry is **not saved** and a `409 Conflict`
 
 ---
 
-## 13. Data Schemas
+## 14. Data Schemas
 
 ### UtilisateurResponse
 | Field | Type | Notes |
@@ -1303,7 +1435,7 @@ If **any** conflict is detected, the entry is **not saved** and a `409 Conflict`
 
 ---
 
-## 14. HTTP Status Code Reference
+## 15. HTTP Status Code Reference
 
 | Code | Meaning | When |
 |---|---|---|
