@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -48,7 +48,7 @@ export function UserForm({ user, onSubmit, isLoading }: UserFormProps) {
       form.setError("mot_de_passe", { message: "Le mot de passe est requis pour la création." });
       return;
     }
-    
+
     const submitData = { ...values };
     if (isEditing && !submitData.mot_de_passe) {
       delete submitData.mot_de_passe;

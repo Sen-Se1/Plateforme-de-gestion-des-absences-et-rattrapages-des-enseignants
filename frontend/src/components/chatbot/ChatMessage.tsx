@@ -1,6 +1,6 @@
 import React from "react";
 import { ChatMessage as ChatMessageType } from "@/types/chatbot";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Sparkles, User, Check, X, AlertTriangle, File as FileIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Markdown } from "./Markdown";
@@ -79,7 +79,7 @@ export default function ChatMessage({
                 Cette action va modifier vos données. Confirmez-vous ?
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Button
                 size="sm"

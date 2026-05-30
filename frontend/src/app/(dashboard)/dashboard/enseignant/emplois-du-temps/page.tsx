@@ -10,20 +10,20 @@ import { WeeklyTimetable } from "@/components/timetable/WeeklyTimetable";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ErrorMessage } from "@/components/ui/error-message";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/Card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, RefreshCw, UserRound, BookOpen, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 export default function TeacherTimetablePage() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
-  
+
   const [activeTab, setActiveTab] = useState("personnel");
   const [matieres, setMatieres] = useState<MatiereResponse[]>([]);
   const [selectedMatiereId, setSelectedMatiereId] = useState<string>("");
-  
+
   const [courses, setCourses] = useState<EmploiDuTempsResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

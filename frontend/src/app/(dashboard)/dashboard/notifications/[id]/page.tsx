@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getNotificationById, markAsRead } from "@/lib/api/notifications";
 import { NotificationResponse } from "@/types/notification";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ArrowLeft, Calendar, Bell } from "lucide-react";

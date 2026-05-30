@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { RattrapageResponse } from "@/types/rattrapage";
 import { RattrapageStatusBadge } from "./RattrapageStatusBadge";
 import { Calendar, BookOpen, User, Clock, MapPin, AlignLeft, ShieldCheck } from "lucide-react";

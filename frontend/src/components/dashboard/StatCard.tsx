@@ -1,5 +1,5 @@
 import { LucideIcon } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 
 interface StatCardProps {
@@ -12,12 +12,12 @@ interface StatCardProps {
   className?: string;
 }
 
-export function StatCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  description, 
-  color = "text-primary", 
+export function StatCard({
+  title,
+  value,
+  icon: Icon,
+  description,
+  color = "text-primary",
   bg = "bg-primary/5",
   className
 }: StatCardProps) {

@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DepartementResponse, CreateDepartementPayload, UpdateDepartementPayload } from "@/types/departement";
@@ -36,9 +36,9 @@ export function DepartementForm({ initialData, onSubmit, onCancel, isLoading }: 
         <Input
           id="nom"
           placeholder="Ex: Informatique"
-          {...register("nom", { 
-            required: "Le nom est requis", 
-            maxLength: { value: 100, message: "Le nom ne peut pas dépasser 100 caractères" } 
+          {...register("nom", {
+            required: "Le nom est requis",
+            maxLength: { value: 100, message: "Le nom ne peut pas dépasser 100 caractères" }
           })}
           disabled={isLoading}
         />

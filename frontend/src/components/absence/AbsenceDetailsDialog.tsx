@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { AbsenceResponse } from "@/types/absence";
 import { AbsenceStatusBadge } from "./AbsenceStatusBadge";
 import { Calendar, BookOpen, User, FileText, Clock, AlignLeft } from "lucide-react";

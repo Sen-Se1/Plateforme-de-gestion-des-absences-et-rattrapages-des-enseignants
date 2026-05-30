@@ -7,7 +7,7 @@ import { WeeklyTimetable } from "@/components/timetable/WeeklyTimetable";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ErrorMessage } from "@/components/ui/error-message";
 import { Calendar, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 
 export default function StudentTimetablePage() {
