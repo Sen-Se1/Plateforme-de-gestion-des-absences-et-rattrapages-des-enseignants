@@ -63,7 +63,7 @@ export default function Chatbot() {
             return;
           }
         } catch (error) {
-          console.error("Failed to parse saved chat history:", error);
+          console.error("Erreur lors du chargement de l'historique de conversation:", error);
         }
       }
 
